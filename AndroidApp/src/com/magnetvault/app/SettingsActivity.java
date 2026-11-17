@@ -153,8 +153,9 @@ public class SettingsActivity extends AppActivity {
         settingsRow(content, R.id.row_theme, "主题", R.drawable.ic_theme);
         settingsRow(content, R.id.row_trash, "回收站保留时间", R.drawable.ic_trash);
 
+        int backupSectionStart = content.getChildCount();
         Design.section(this, content, "备份与恢复", "本地导出加密 .mjbf 文件，支持合并与回滚");
-        TextView anchor = (TextView) content.getChildAt(content.getChildCount() - 3);
+        final View anchor = content.getChildAt(backupSectionStart + 1);
         settingsPanel(content, R.id.tv_pwd_status);
         settingsRow(content, R.id.row_pwd, "设置备份密码", R.drawable.ic_lock);
         settingsRow(content, R.id.row_export, "导出加密备份", R.drawable.ic_import);
@@ -191,7 +192,7 @@ public class SettingsActivity extends AppActivity {
         android.widget.ScrollView scroll = Design.scroll(this, content);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
-        if ("backup".equals(getIntent().getStringExtra("section")))
+        if ("backup".equals(getIntent().getStringExtra("section")) && anchor != null)
             scroll.post(
                     () -> scroll.smoothScrollTo(0, Math.max(0, anchor.getTop() - Ui.dp(this, 12))));
     }
