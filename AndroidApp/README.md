@@ -1,6 +1,25 @@
 # MagnetVault Android 工程
 
-Java 8 + Android View，SQLiteOpenHelper 管理本地数据。包名 `com.magnetvault.app`，minSdk 26、targetSdk 34，版本 2.3.1（versionCode 9）。
+Java 8 + Android View，SQLiteOpenHelper 管理本地数据。包名 `com.magnetvault.app`，minSdk 26、targetSdk 34。源码版本与本地 versionCode 由 `version.properties` 统一维护。
+
+## 自动发布
+
+`main` 分支的正式代码或构建配置更新会触发 `.github/workflows/android-release.yml`，可在 Actions 页面手动运行。流程只在本仓库的 `main` 执行，使用 Java 17 与标准 Android build-tools 35.0.0，校验原签名后发布到 Releases。
+
+首次配置仓库的 Actions Secrets：
+
+| 名称 | 值 |
+| --- | --- |
+| `MV_KEYSTORE_BASE64` | 原签名密钥的 Base64 内容 |
+| `MV_STORE_PASSWORD` | 原密钥库口令 |
+| `MV_KEY_ALIAS` | 密钥别名，默认 `magnetvault` |
+| `MV_KEY_PASSWORD` | 密钥口令，未设置时使用密钥库口令 |
+
+在 Actions Variables 中设置 `MV_SIGNING_CERT_SHA256` 为原签名证书 SHA256，用于阻止签错密钥的 APK 发布。私钥内容与口令仅通过 Secrets 传入签名步骤，APK 上传前删除临时密钥。
+
+云端 `versionName` 为 `version.properties` 的版本加上运行序号，例如 `2.3.1.1`；`versionCode` 为 `max(源码 versionCode, 1000000) + 运行序号`。保留该 workflow 文件名，以维持运行序号连续。重新运行同一次构建沿用版本，已发布附件不会被覆盖。
+
+每次发布提供 `MagnetVault.apk`、带版本号的同一 APK 和 `SHA256SUMS.txt`。用户可始终使用 [最新版 APK 链接](https://github.com/yimisunan/cilishouc/releases/latest/download/MagnetVault.apk)。
 
 ## 构建环境
 
@@ -14,8 +33,10 @@ Java 8 + Android View，SQLiteOpenHelper 管理本地数据。包名 `com.magnet
 
 | 变量 | 用途 | 默认值 |
 | --- | --- | --- |
-| `MV_ANDROID_SDK` | 含 `android-30.jar` 和 `r8.jar` 的目录 | `/opt/androidsdk` |
-| `MV_BUILD_TOOLS` | Android 构建工具目录 | `/usr/lib/android-sdk/build-tools/29.0.3` |
+| `MV_ANDROID_SDK` | 旧版工具目录，含 `android-30.jar` 与可选的 `r8.jar` | `/opt/androidsdk` |
+| `MV_ANDROID_JAR` | 标准 SDK 的 `android.jar` 路径，可替代旧版目录约定 | `$MV_ANDROID_SDK/android-30.jar` |
+| `MV_R8_JAR` | 没有 `d8` 可执行文件时使用的 JAR | `$MV_ANDROID_SDK/r8.jar` |
+| `MV_BUILD_TOOLS` | Android 构建工具目录，优先使用其中的 `d8` | `/usr/lib/android-sdk/build-tools/29.0.3` |
 | `MV_KEYSTORE` | 本地签名密钥路径 | 工程内 `release.keystore` |
 | `MV_KEY_ALIAS` | 签名密钥别名 | `magnetvault` |
 | `MV_STORE_PASSWORD` | 密钥库口令 | 交互输入 |

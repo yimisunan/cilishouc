@@ -1,0 +1,167 @@
+name: Android Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - AndroidApp/src/**
+      - AndroidApp/res/**
+      - AndroidApp/AndroidManifest.xml
+      - AndroidApp/build.sh
+      - AndroidApp/version.properties
+      - .github/workflows/android-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-main
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main' && github.repository == 'yimisunan/cilishouc'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.name }}
+      version_code: ${{ steps.version.outputs.code }}
+      tag: ${{ steps.version.outputs.tag }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out production source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set application version
+        id: version
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+          values = dict(line.split('=', 1) for line in Path('AndroidApp/version.properties').read_text().splitlines() if line and not line.startswith('#'))
+          base = values['versionName']
+          if not re.fullmatch(r'[0-9]+(?:\.[0-9]+){2}', base):
+              raise SystemExit('versionName must contain three numeric components')
+          number = int(os.environ['GITHUB_RUN_NUMBER'])
+          code = max(int(values['versionCode']), 1000000) + number
+          if not 0 < code <= 2100000000:
+              raise SystemExit('versionCode exceeds the Android limit')
+          version = f'{base}.{number}'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'name={version}\ncode={code}\ntag=v{version}\n')
+          PY
+
+      - name: Install Android build tools
+        run: |
+          set -euo pipefail
+          sdkmanager 'platforms;android-30' 'build-tools;35.0.0' >/dev/null
+          sdk_root="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "MV_ANDROID_JAR=$sdk_root/platforms/android-30/android.jar" >> "$GITHUB_ENV"
+          echo "MV_BUILD_TOOLS=$sdk_root/build-tools/35.0.0" >> "$GITHUB_ENV"
+
+      - name: Build with the original release signature
+        env:
+          MV_KEYSTORE_BASE64: ${{ secrets.MV_KEYSTORE_BASE64 }}
+          MV_STORE_PASSWORD: ${{ secrets.MV_STORE_PASSWORD }}
+          MV_KEY_PASSWORD: ${{ secrets.MV_KEY_PASSWORD }}
+          MV_KEY_ALIAS: ${{ secrets.MV_KEY_ALIAS }}
+          MV_SIGNING_CERT_SHA256: ${{ vars.MV_SIGNING_CERT_SHA256 }}
+          MV_VERSION_NAME: ${{ steps.version.outputs.name }}
+          MV_VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          umask 077
+          export MV_KEYSTORE="$RUNNER_TEMP/magnetvault-release.keystore"
+          export MV_APK="$RUNNER_TEMP/release/MagnetVault.apk"
+          trap 'rm -f -- "$MV_KEYSTORE"' EXIT
+          if [[ -z "$MV_KEYSTORE_BASE64" || -z "$MV_STORE_PASSWORD" || -z "$MV_SIGNING_CERT_SHA256" ]]; then
+            echo 'Release signing secrets or certificate fingerprint are missing.' >&2
+            exit 1
+          fi
+          printf '%s' "$MV_KEYSTORE_BASE64" | base64 --decode > "$MV_KEYSTORE"
+          unset MV_KEYSTORE_BASE64
+          bash AndroidApp/build.sh
+          cert="$("$MV_BUILD_TOOLS/apksigner" verify --print-certs "$MV_APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          if [[ "$cert" != "$MV_SIGNING_CERT_SHA256" ]]; then
+            echo 'APK signature does not match the original release certificate.' >&2
+            exit 1
+          fi
+          "$MV_BUILD_TOOLS/zipalign" -c 4 "$MV_APK"
+          cp "$MV_APK" "$RUNNER_TEMP/release/MagnetVault-v$MV_VERSION_NAME.apk"
+          cd "$RUNNER_TEMP/release"
+          sha256sum ./*.apk > SHA256SUMS.txt
+
+      - name: Save signed APKs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: signed-apk
+          path: |
+            ${{ runner.temp }}/release/*.apk
+            ${{ runner.temp }}/release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified APKs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: signed-apk
+          path: release
+
+      - name: Publish downloadable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+          RELEASE_CODE: ${{ needs.build.outputs.version_code }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          RELEASE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum --check SHA256SUMS.txt
+          export RELEASE_NOTES="$RUNNER_TEMP/release-notes.md"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          text = f'''磁力收藏夹 {os.environ['RELEASE_VERSION']}
+
+          下载 `MagnetVault.apk` 即可安装；带版本号的 APK 内容相同，便于留存。
+
+          使用原正式签名与原包名，可覆盖相同签名的旧版本；无需卸载。versionCode：{os.environ['RELEASE_CODE']}。
+
+          此版本由正式源码自动构建。源码提交：{os.environ['RELEASE_SHA']}。
+
+          本地收藏保存在应用内。首次操作前可在应用内导出加密备份。
+          '''
+          Path(os.environ['RELEASE_NOTES']).write_text(text)
+          PY
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; leaving published assets unchanged."
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$RELEASE_SHA" \
+              --title "磁力收藏夹 $RELEASE_VERSION" \
+              --notes-file "$RELEASE_NOTES" \
+              --latest \
+              ./MagnetVault.apk "./MagnetVault-v$RELEASE_VERSION.apk" ./SHA256SUMS.txt
+          fi

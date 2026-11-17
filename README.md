@@ -2,7 +2,15 @@
 
 用于收藏和整理磁力、ED2K 文件链接的 Android 应用。只保存链接与文字元数据，不下载、缓存或解析媒体本体和种子文件。
 
-当前版本：**2.3.1**（versionCode 9）。包名：`com.magnetvault.app`。支持 Android 8.0（API 26）及以上版本，targetSdk 34。
+当前源码版本：**2.3.1**。包名：`com.magnetvault.app`。支持 Android 8.0（API 26）及以上版本，targetSdk 34。
+
+## 下载与更新
+
+**[点击下载最新版 APK](https://github.com/yimisunan/cilishouc/releases/latest/download/MagnetVault.apk)** · [查看全部版本](https://github.com/yimisunan/cilishouc/releases)
+
+下载 `MagnetVault.apk` 后打开安装即可。自动构建沿用原正式签名和原包名，可直接覆盖相同签名的旧版本；无需卸载。更新前可在应用内导出一份加密备份。
+
+维护者更新正式源码并推送到 `main` 后，GitHub Actions 自动构建、校验原签名并发布 Releases。云端版本在源码版本后追加构建序号（如 `2.3.1.1`），安装用的 versionCode 自动递增。仅修改说明文档不会触发发布；也可以在 [Actions](https://github.com/yimisunan/cilishouc/actions/workflows/android-release.yml) 页面选择 `Run workflow` 手动发布。
 
 ## 功能
 
