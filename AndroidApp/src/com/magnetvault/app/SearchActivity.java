@@ -20,6 +20,7 @@ public class SearchActivity extends AppActivity {
     private boolean current;
     private int scope, request;
     private final List<String> selectedTags = new ArrayList<>();
+    private final LinkedHashSet<String> expanded = new LinkedHashSet<>();
     private final List<Entry> results = new ArrayList<>();
     private EditText input;
     private ImageButton clearBtn;
@@ -39,6 +40,8 @@ public class SearchActivity extends AppActivity {
             scope = state.getInt("scope");
             ArrayList<String> t = state.getStringArrayList("tags");
             if (t != null) selectedTags.addAll(t);
+            ArrayList<String> exp = state.getStringArrayList("expanded");
+            if (exp != null) expanded.addAll(exp);
         } else if (getIntent().hasExtra("tag")) selectedTags.add(getIntent().getStringExtra("tag"));
 
         LinearLayout root = Design.column(this);
@@ -120,9 +123,16 @@ public class SearchActivity extends AppActivity {
         setContentView(root);
         list.setOnItemClickListener(
                 (p, v, pos, id) -> {
-                    Intent i = new Intent(this, DetailActivity.class);
-                    i.putExtra(DetailActivity.EXTRA_ENTRY_ID, results.get(pos).id);
-                    startActivity(i);
+                    if (pos < 0 || pos >= results.size()) return;
+                    String entryId = results.get(pos).id;
+                    if (!expanded.remove(entryId)) expanded.add(entryId);
+                    adapter.notifyDataSetChanged();
+                });
+        list.setOnItemLongClickListener(
+                (p, v, pos, id) -> {
+                    if (pos < 0 || pos >= results.size()) return false;
+                    openDetail(results.get(pos).id);
+                    return true;
                 });
         input.setText(state == null ? "" : state.getString("query", ""));
         clearBtn.setVisibility(input.getText().length() > 0 ? View.VISIBLE : View.GONE);
@@ -171,6 +181,7 @@ public class SearchActivity extends AppActivity {
         s.putBoolean("current", current);
         s.putInt("scope", scope);
         s.putStringArrayList("tags", new ArrayList<>(selectedTags));
+        s.putStringArrayList("expanded", new ArrayList<>(expanded));
         super.onSaveInstanceState(s);
     }
 
@@ -258,6 +269,7 @@ public class SearchActivity extends AppActivity {
         List<String> tags = new ArrayList<>(selectedTags);
         if (q.isEmpty() && tags.isEmpty()) {
             results.clear();
+            expanded.clear();
             adapter.notifyDataSetChanged();
             status.setText("输入关键字，或按标签筛选");
             showEmpty(
@@ -284,6 +296,9 @@ public class SearchActivity extends AppActivity {
                     if (token != request) return;
                     results.clear();
                     results.addAll(data);
+                    Set<String> valid = new HashSet<>();
+                    for (Entry e : data) valid.add(e.id);
+                    expanded.retainAll(valid);
                     adapter.notifyDataSetChanged();
                     if (data.isEmpty()) {
                         status.setText("没有匹配的收藏");
@@ -315,6 +330,88 @@ public class SearchActivity extends AppActivity {
                 });
     }
 
+    private void openDetail(String id) {
+        Intent i = new Intent(this, DetailActivity.class);
+        i.putExtra(DetailActivity.EXTRA_ENTRY_ID, id);
+        startActivity(i);
+    }
+
+    private void toggleStar(Entry e) {
+        final boolean next = !e.starred;
+        e.starred = next;
+        adapter.notifyDataSetChanged();
+        load(
+                () -> {
+                    Repo.setStar(SearchActivity.this, e.id, next);
+                    return true;
+                },
+                ok -> {});
+    }
+
+    private void moreActions(Entry e) {
+        Ui.menuSheet(
+                this,
+                e.displayTitle(),
+                new String[] {"编辑收藏", "分享链接", "移入回收站"},
+                new int[] {R.drawable.ic_edit, R.drawable.ic_share, R.drawable.ic_trash},
+                (d, w) -> {
+                    if (w == 0) {
+                        Intent i = new Intent(this, EditActivity.class);
+                        i.putExtra(EditActivity.EXTRA_ENTRY_ID, e.id);
+                        startActivity(i);
+                    } else if (w == 1) {
+                        Ui.share(this, e.magnet);
+                    } else if (w == 2) {
+                        new AlertDialog.Builder(this)
+                                .setTitle("移入回收站？")
+                                .setMessage(e.displayTitle() + "\n可在「我的 → 回收站」恢复。")
+                                .setNegativeButton("取消", null)
+                                .setPositiveButton(
+                                        "移入回收站",
+                                        (x, y) ->
+                                                load(
+                                                        () -> {
+                                                            Repo.softDelete(this, e.id);
+                                                            return true;
+                                                        },
+                                                        ok -> {
+                                                            expanded.remove(e.id);
+                                                            search();
+                                                            Ui.toast(this, "已移入回收站");
+                                                        }))
+                                .show();
+                    }
+                });
+    }
+
+    private final EntryCard.Actions searchActions =
+            new EntryCard.Actions() {
+                @Override
+                public void onOpen(Entry entry) {
+                    Ui.openMagnet(SearchActivity.this, entry.magnet);
+                }
+
+                @Override
+                public void onCopy(Entry entry) {
+                    Ui.copy(SearchActivity.this, entry.magnet);
+                }
+
+                @Override
+                public void onToggleStar(Entry entry) {
+                    toggleStar(entry);
+                }
+
+                @Override
+                public void onDetail(Entry entry) {
+                    openDetail(entry.id);
+                }
+
+                @Override
+                public void onMore(Entry entry) {
+                    moreActions(entry);
+                }
+            };
+
     private class ResultAdapter extends BaseAdapter {
         public int getCount() {
             return results.size();
@@ -329,55 +426,20 @@ public class SearchActivity extends AppActivity {
         }
 
         public View getView(int pos, View v, ViewGroup parent) {
-            if (v == null) v = getLayoutInflater().inflate(R.layout.item_entry, parent, false);
-            Entry e = results.get(pos);
-            boolean ed2k = MagnetParser.isEd2k(e.magnet);
-
-            ((TextView) v.findViewById(R.id.item_title)).setText(e.displayTitle());
-
-            TextView proto = v.findViewById(R.id.item_proto);
-            proto.setText(ed2k ? "ED2K" : "BT");
-            proto.setTextColor(Design.color(SearchActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
-            proto.setBackgroundResource(ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
-
-            View badge = v.findViewById(R.id.item_badge);
-            badge.setBackgroundResource(ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
-            ImageView icon = v.findViewById(R.id.item_icon);
-            icon.setImageResource(ed2k ? R.drawable.ic_file : R.drawable.ic_magnet);
-            icon.setColorFilter(Design.color(SearchActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
-
-            String meta = e.categoryId == null ? "未分类" : e.categoryName;
-            if (ed2k) {
-                long sz = MagnetParser.xlSize(e.magnet);
-                if (sz > 0) meta += " · " + Ui.sizeText(sz);
+            if (v == null || !(v.getTag() instanceof EntryCard.Holder)) {
+                v = EntryCard.inflate(SearchActivity.this, parent);
             }
-            if (!e.tags.isEmpty()) meta += " · " + e.tagText();
-            ((TextView) v.findViewById(R.id.item_sub)).setText(meta);
-
-            ImageView star = v.findViewById(R.id.item_star);
-            star.setImageResource(e.starred ? R.drawable.ic_star : R.drawable.ic_star_outline);
-            star.setColorFilter(
-                    Design.color(SearchActivity.this, e.starred ? R.color.c_star : R.color.c_text2));
-            star.setContentDescription((e.starred ? "取消星标 " : "添加星标 ") + e.displayTitle());
-            star.setOnClickListener(
-                    view -> {
-                        final boolean next = !e.starred;
-                        e.starred = next;
-                        notifyDataSetChanged();
-                        load(
-                                () -> {
-                                    Repo.setStar(SearchActivity.this, e.id, next);
-                                    return true;
-                                },
-                                ok -> {});
-                    });
-
-            ImageView copy = v.findViewById(R.id.item_more);
-            copy.setImageResource(R.drawable.ic_copy);
-            copy.setColorFilter(Design.color(SearchActivity.this, R.color.c_accent));
-            copy.setContentDescription("复制链接 " + e.displayTitle());
-            copy.setOnClickListener(view -> Ui.copy(SearchActivity.this, e.magnet));
-
+            Entry e = results.get(pos);
+            EntryCard.bind(
+                    SearchActivity.this,
+                    v,
+                    e,
+                    ThemePrefs.isCompactList(SearchActivity.this),
+                    expanded.contains(e.id),
+                    false,
+                    false,
+                    current ? category : null,
+                    searchActions);
             return v;
         }
     }

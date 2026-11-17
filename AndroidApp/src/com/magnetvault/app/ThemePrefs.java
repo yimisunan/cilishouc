@@ -24,6 +24,7 @@ public final class ThemePrefs {
     private static final String KEY_DAV_LAST = "davLastResult";
     private static final String KEY_LAST_BACKUP = "lastBackupAt";
     private static final String KEY_AUTO_BACKUP = "autoBackup";
+    private static final String KEY_COMPACT_LIST = "compactList";
 
     public static final String SECRET_DAV_PASSWORD = "davPassword";
 
@@ -67,6 +68,18 @@ public final class ThemePrefs {
             return "深色";
         }
         return "跟随系统";
+    }
+
+    public static boolean isCompactList(Context ctx) {
+        return prefs(ctx).getBoolean(KEY_COMPACT_LIST, true);
+    }
+
+    public static void setCompactList(Context ctx, boolean compact) {
+        prefs(ctx).edit().putBoolean(KEY_COMPACT_LIST, compact).apply();
+    }
+
+    public static String compactListLabel(Context ctx) {
+        return isCompactList(ctx) ? "紧凑（默认 2 行）" : "完整（显示全名）";
     }
 
     public static String deviceId(Context ctx) {

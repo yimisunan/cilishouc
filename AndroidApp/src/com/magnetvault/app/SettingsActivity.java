@@ -25,6 +25,7 @@ public class SettingsActivity extends AppActivity {
     private TextView tvPwdStatus;
     private TextView tvAudit;
     private TextView tvDavStatus;
+    private TextView rowListDensity;
 
     private String pendingName;
     private AlertDialog busyDialog;
@@ -152,6 +153,9 @@ public class SettingsActivity extends AppActivity {
         Design.section(this, content, "外观与习惯", null);
         settingsRow(content, R.id.row_theme, "主题", R.drawable.ic_theme);
         settingsRow(content, R.id.row_trash, "回收站保留时间", R.drawable.ic_trash);
+        rowListDensity =
+                settingsRow(content, View.generateViewId(), "列表标题显示", R.drawable.ic_sort);
+        rowListDensity.setOnClickListener(v -> chooseListDensity());
 
         int backupSectionStart = content.getChildCount();
         Design.section(this, content, "备份与恢复", "本地导出加密 .mjbf 文件，支持合并与回滚");
@@ -197,7 +201,7 @@ public class SettingsActivity extends AppActivity {
                     () -> scroll.smoothScrollTo(0, Math.max(0, anchor.getTop() - Ui.dp(this, 12))));
     }
 
-    private void settingsRow(LinearLayout content, int id, String label, int icon) {
+    private TextView settingsRow(LinearLayout content, int id, String label, int icon) {
         TextView row = Design.text(this, label, 15, R.color.c_text);
         row.setTypeface(null, android.graphics.Typeface.BOLD);
         row.setId(id);
@@ -217,6 +221,7 @@ public class SettingsActivity extends AppActivity {
         row.setClickable(true);
         content.addView(row);
         Design.gap(this, content, 8);
+        return row;
     }
 
     private void settingsPanel(LinearLayout content, int id) {
@@ -263,6 +268,9 @@ public class SettingsActivity extends AppActivity {
         int keepDays = ThemePrefs.trashKeepDays(this);
         ((TextView) findViewById(R.id.row_trash))
                 .setText("回收站保留 · " + (keepDays > 0 ? keepDays + " 天" : "不自动清理"));
+        if (rowListDensity != null) {
+            rowListDensity.setText("列表标题显示 · " + ThemePrefs.compactListLabel(this));
+        }
         tvAudit.setText(Repo.lastAuditText(this));
         boolean auto = BackupJob.isScheduled(this) || ThemePrefs.autoBackup(this);
         ((TextView) findViewById(R.id.row_auto_backup))
@@ -385,6 +393,29 @@ public class SettingsActivity extends AppActivity {
                                                 ? "已关闭自动清理"
                                                 : "回收站条目将在 " + days[which] + " 天后自动清理");
                             }
+                        })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void chooseListDensity() {
+        final String[] labels = {"紧凑（自动提取编号，默认 2 行）", "完整（展开显示全部标题）"};
+        int current = ThemePrefs.isCompactList(this) ? 0 : 1;
+        new AlertDialog.Builder(this)
+                .setTitle("列表标题显示")
+                .setSingleChoiceItems(
+                        labels,
+                        current,
+                        (d, which) -> {
+                            boolean compact = which == 0;
+                            ThemePrefs.setCompactList(SettingsActivity.this, compact);
+                            d.dismiss();
+                            refresh();
+                            Ui.toast(
+                                    SettingsActivity.this,
+                                    compact
+                                            ? "已切换为紧凑列表（点卡片可展开完整标题）"
+                                            : "已切换为完整标题显示");
                         })
                 .setNegativeButton("取消", null)
                 .show();

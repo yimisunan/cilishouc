@@ -23,6 +23,8 @@ public class ImportActivity extends AppActivity {
     private final List<Category> dbCategories = new ArrayList<>();
     private final Set<String> categoryPathSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     private final List<ImportDraft.Row> visible = new ArrayList<>();
+    private final Set<ImportDraft.Row> expandedRows =
+            Collections.newSetFromMap(new IdentityHashMap<>());
     private String stateKey;
     private boolean recognizing;
     private int previewRequest;
@@ -208,6 +210,7 @@ public class ImportActivity extends AppActivity {
             }
             task.session.draft = draft;
             task.session.query = ""; position = positionTop = 0;
+            expandedRows.clear();
             render(); saveSession();
         }, error -> {
             recognizing = false;
@@ -228,7 +231,7 @@ public class ImportActivity extends AppActivity {
         summary.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         header.addView(summary);
         Design.gap(this, header, 8);
-        header.addView(Design.text(this, "点每条的分类、标签可直接修改；勾选后可批量设置。未勾选的条目也会导入，除非设为暂不导入。", 14, R.color.c_text2));
+        header.addView(Design.text(this, "点标题可展开完整名称；点分类、标签可直接修改，勾选后可批量设置。", 14, R.color.c_text2));
         Design.gap(this, header, 8);
         EditText search = Design.input(this, "搜索标题、标签或分类", false);
         search.setContentDescription("搜索待导入清单");
@@ -438,6 +441,7 @@ public class ImportActivity extends AppActivity {
                     .setNegativeButton("继续添加", (d, w) -> {
                         Task next = new Task(); next.observer = this::taskChanged;
                         task = next; discarded = false; stateKey = UUID.randomUUID().toString();
+                        expandedRows.clear();
                         position = positionTop = 0; render(); loadCategories();
                     }).setCancelable(false).show();
         } else if (task.error != null && !task.delivered) {
@@ -452,7 +456,9 @@ public class ImportActivity extends AppActivity {
         new AlertDialog.Builder(this).setTitle("重新识别粘贴内容？")
                 .setMessage("清单中的分类、标签和标题修改将清除，原粘贴内容会保留。")
                 .setNegativeButton("继续整理", null).setPositiveButton("返回修改", (d, w) -> {
-                    task.session.draft = null; task.session.query = ""; render(); saveSession();
+                    task.session.draft = null; task.session.query = "";
+                    expandedRows.clear();
+                    render(); saveSession();
                 }).show();
     }
 
@@ -520,6 +526,39 @@ public class ImportActivity extends AppActivity {
             setEnabled(((ViewGroup) view).getChildAt(i), enabled);
     }
 
+    private TextView draftSpecPill() {
+        TextView tv = Design.text(this, "", 11, R.color.c_chip_text);
+        tv.setBackgroundResource(R.drawable.bg_tag_pill);
+        tv.setSingleLine(true);
+        tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        tv.setMaxWidth(Ui.dp(this, 120));
+        Design.pad(this, tv, 6, 2, 2);
+        tv.setVisibility(View.GONE);
+        return tv;
+    }
+
+    private void bindDraftSpecs(Holder h, List<String> badges) {
+        if (badges == null || badges.isEmpty()) {
+            h.spec1.setVisibility(View.GONE);
+            h.spec2.setVisibility(View.GONE);
+            return;
+        }
+        h.spec1.setVisibility(View.VISIBLE);
+        h.spec1.setText(badges.get(0));
+        h.spec1.setMaxWidth(Ui.dp(this, 120));
+        if (badges.size() == 1) {
+            h.spec2.setVisibility(View.GONE);
+        } else if (badges.size() == 2) {
+            h.spec2.setVisibility(View.VISIBLE);
+            h.spec2.setText(badges.get(1));
+            h.spec2.setMaxWidth(Ui.dp(this, 120));
+        } else {
+            h.spec2.setVisibility(View.VISIBLE);
+            h.spec2.setText(badges.get(1) + " · " + badges.get(2));
+            h.spec2.setMaxWidth(Ui.dp(this, 148));
+        }
+    }
+
     private final class DraftAdapter extends BaseAdapter {
         public int getCount() { return visible.size(); }
         public Object getItem(int p) { return visible.get(p); }
@@ -530,16 +569,80 @@ public class ImportActivity extends AppActivity {
                 h = new Holder();
                 LinearLayout card = Design.card(ImportActivity.this);
                 LinearLayout row = Design.row(ImportActivity.this);
-                h.check = new CheckBox(ImportActivity.this); h.check.setMinWidth(Ui.dp(ImportActivity.this, 44)); h.check.setMinHeight(Ui.dp(ImportActivity.this, 44));
-                row.addView(h.check);
+                row.setGravity(android.view.Gravity.TOP);
+
+                h.check = new CheckBox(ImportActivity.this);
+                LinearLayout.LayoutParams ckp =
+                        new LinearLayout.LayoutParams(
+                                Ui.dp(ImportActivity.this, 40), Ui.dp(ImportActivity.this, 40));
+                ckp.rightMargin = Ui.dp(ImportActivity.this, 4);
+                row.addView(h.check, ckp);
+
+                h.titleCol = Design.column(ImportActivity.this);
+                h.titleCol.setClickable(true);
+
+                h.focusRow = Design.row(ImportActivity.this);
+                h.focusRow.setVisibility(View.GONE);
+                h.code = Design.text(ImportActivity.this, "", 12, R.color.c_accent);
+                h.code.setTypeface(null, android.graphics.Typeface.BOLD);
+                h.code.setSingleLine(true);
+                h.code.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                Design.pad(ImportActivity.this, h.code, 7, 2, 2);
+                h.code.setVisibility(View.GONE);
+                LinearLayout.LayoutParams codeLp = new LinearLayout.LayoutParams(-2, -2);
+                codeLp.rightMargin = Ui.dp(ImportActivity.this, 6);
+                h.focusRow.addView(h.code, codeLp);
+
+                h.spec1 = draftSpecPill();
+                LinearLayout.LayoutParams s1Lp = new LinearLayout.LayoutParams(-2, -2);
+                s1Lp.rightMargin = Ui.dp(ImportActivity.this, 5);
+                h.focusRow.addView(h.spec1, s1Lp);
+
+                h.spec2 = draftSpecPill();
+                h.focusRow.addView(h.spec2, new LinearLayout.LayoutParams(-2, -2));
+
+                LinearLayout.LayoutParams frp = new LinearLayout.LayoutParams(-1, -2);
+                frp.bottomMargin = Ui.dp(ImportActivity.this, 4);
+                h.titleCol.addView(h.focusRow, frp);
+
                 h.title = Design.text(ImportActivity.this, "", 15, R.color.c_text);
                 h.title.setTypeface(null, android.graphics.Typeface.BOLD);
-                row.addView(h.title, new LinearLayout.LayoutParams(0, -2, 1));
-                h.more = Design.quietIcon(ImportActivity.this, R.drawable.ic_more, "编辑标题、来源与备注", () -> {});
-                row.addView(h.more); card.addView(row);
+                h.titleCol.addView(h.title);
+
+                LinearLayout statusRow = Design.row(ImportActivity.this);
                 h.status = Design.text(ImportActivity.this, "", 12, R.color.c_text2);
-                Design.pad(ImportActivity.this, h.status, 4, 2, 8);
-                card.addView(h.status);
+                statusRow.addView(h.status, new LinearLayout.LayoutParams(0, -2, 1));
+                h.chev = new ImageView(ImportActivity.this);
+                h.chev.setImageResource(R.drawable.ic_chevron_down);
+                h.chev.setColorFilter(Design.color(ImportActivity.this, R.color.c_text2));
+                h.chev.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                LinearLayout.LayoutParams chp =
+                        new LinearLayout.LayoutParams(
+                                Ui.dp(ImportActivity.this, 14), Ui.dp(ImportActivity.this, 14));
+                chp.leftMargin = Ui.dp(ImportActivity.this, 6);
+                statusRow.addView(h.chev, chp);
+                LinearLayout.LayoutParams srp = new LinearLayout.LayoutParams(-1, -2);
+                srp.topMargin = Ui.dp(ImportActivity.this, 4);
+                h.titleCol.addView(statusRow, srp);
+
+                h.note = Design.text(ImportActivity.this, "", 12, R.color.c_text2);
+                h.note.setBackgroundResource(R.drawable.bg_card_soft);
+                Design.pad(ImportActivity.this, h.note, 8, 6, 6);
+                h.note.setVisibility(View.GONE);
+                LinearLayout.LayoutParams np = new LinearLayout.LayoutParams(-1, -2);
+                np.topMargin = Ui.dp(ImportActivity.this, 6);
+                h.titleCol.addView(h.note, np);
+
+                row.addView(h.titleCol, new LinearLayout.LayoutParams(0, -2, 1));
+
+                h.more = Design.quietIcon(ImportActivity.this, R.drawable.ic_more, "编辑标题、来源与备注", () -> {});
+                h.more.setLayoutParams(
+                        new LinearLayout.LayoutParams(
+                                Ui.dp(ImportActivity.this, 40), Ui.dp(ImportActivity.this, 40)));
+                Design.pad(ImportActivity.this, h.more, 8, 8, 8);
+                row.addView(h.more);
+                card.addView(row);
+
                 LinearLayout actions = Design.row(ImportActivity.this);
                 h.folder = Design.button(ImportActivity.this, "", R.drawable.ic_folder, false, () -> {});
                 h.folder.setTextSize(13); h.folder.setSingleLine(true); h.folder.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
@@ -548,21 +651,93 @@ public class ImportActivity extends AppActivity {
                 LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(0, -2, 1); fp.rightMargin = Ui.dp(ImportActivity.this, 8);
                 actions.addView(h.folder, fp);
                 actions.addView(h.tags, new LinearLayout.LayoutParams(0, -2, 1));
-                card.addView(actions); card.setTag(h); recycled = card;
+                LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, -2);
+                ap.topMargin = Ui.dp(ImportActivity.this, 8);
+                card.addView(actions, ap);
+
+                card.setClickable(true);
+                card.setTag(h);
+                recycled = card;
             } else h = (Holder) recycled.getTag();
             ImportDraft.Row item = visible.get(p); Entry e = item.entry;
             final View cardView = recycled;
+            boolean ed2k = MagnetParser.isEd2k(e.magnet);
+            boolean compact = ThemePrefs.isCompactList(ImportActivity.this);
+            boolean rowExpanded = expandedRows.contains(item);
+            String rawTitle = e.displayTitle();
+            TitleFormat.Parsed parsed = compact ? TitleFormat.parse(rawTitle) : null;
+
             cardView.setBackgroundResource(item.selected ? R.drawable.bg_card_selected : R.drawable.bg_card);
-            h.title.setText(e.displayTitle());
+            if (compact && parsed != null && parsed.hasFocus()) {
+                boolean showCode = !parsed.code.isEmpty();
+                boolean showSpecs = !rowExpanded && !parsed.badges.isEmpty();
+                h.focusRow.setVisibility((showCode || showSpecs) ? View.VISIBLE : View.GONE);
+                if (showCode) {
+                    h.code.setVisibility(View.VISIBLE);
+                    h.code.setText(parsed.code);
+                    h.code.setTextColor(
+                            Design.color(ImportActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
+                    h.code.setBackgroundResource(
+                            ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
+                } else {
+                    h.code.setVisibility(View.GONE);
+                }
+                if (showSpecs) {
+                    bindDraftSpecs(h, parsed.badges);
+                } else {
+                    h.spec1.setVisibility(View.GONE);
+                    h.spec2.setVisibility(View.GONE);
+                }
+                if (rowExpanded) {
+                    h.title.setVisibility(View.VISIBLE);
+                    h.title.setText(rawTitle);
+                } else if (parsed.summary.isEmpty()) {
+                    h.title.setVisibility(View.GONE);
+                } else {
+                    h.title.setVisibility(View.VISIBLE);
+                    h.title.setText(parsed.summary);
+                }
+            } else {
+                h.focusRow.setVisibility(View.GONE);
+                h.code.setVisibility(View.GONE);
+                h.spec1.setVisibility(View.GONE);
+                h.spec2.setVisibility(View.GONE);
+                h.title.setVisibility(View.VISIBLE);
+                h.title.setText(rawTitle);
+            }
+
+            if (!compact || rowExpanded) {
+                h.title.setMaxLines(Integer.MAX_VALUE);
+                h.title.setEllipsize(null);
+            } else {
+                h.title.setMaxLines(2);
+                h.title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            }
+
+            if (rowExpanded && !android.text.TextUtils.isEmpty(e.note)) {
+                h.note.setVisibility(View.VISIBLE);
+                h.note.setText("备注：" + e.note.trim());
+            } else {
+                h.note.setVisibility(View.GONE);
+            }
+            h.chev.setRotation(rowExpanded ? 180f : 0f);
+
+            View.OnClickListener toggleRow =
+                    v -> {
+                        if (!expandedRows.remove(item)) expandedRows.add(item);
+                        notifyDataSetChanged();
+                    };
+            cardView.setOnClickListener(toggleRow);
+            h.titleCol.setOnClickListener(toggleRow);
+
             h.check.setOnCheckedChangeListener(null); h.check.setChecked(item.selected);
-            h.check.setContentDescription("选择 " + e.displayTitle());
+            h.check.setContentDescription("选择 " + rawTitle);
             h.check.setEnabled(!task.running && item.editable());
             h.check.setOnCheckedChangeListener((v, checked) -> {
                 item.selected = checked;
                 cardView.setBackgroundResource(checked ? R.drawable.bg_card_selected : R.drawable.bg_card);
                 selection.setText("当前显示 " + visible.size() + " 条 · 已选 " + task.session.draft.selected().size() + " 条（含筛选外）");
             });
-            boolean ed2k = MagnetParser.isEd2k(e.magnet);
             h.status.setText((ed2k ? "ED2K" : "BT") + " · " + (item.editable() ? (item.included ? "待导入" : "暂不导入") : item.duplicate));
             h.status.setTextColor(Design.color(ImportActivity.this, item.editable() ? (item.included ? R.color.c_accent : R.color.c_text2) : R.color.c_star));
             h.folder.setText(e.categoryName.isEmpty() ? "未分类" : e.categoryName);
@@ -574,5 +749,12 @@ public class ImportActivity extends AppActivity {
             return recycled;
         }
     }
-    private static class Holder { CheckBox check; TextView title, status; Button folder, tags; ImageButton more; }
+    private static class Holder {
+        CheckBox check;
+        LinearLayout titleCol, focusRow;
+        TextView code, spec1, spec2, title, status, note;
+        ImageView chev;
+        Button folder, tags;
+        ImageButton more;
+    }
 }

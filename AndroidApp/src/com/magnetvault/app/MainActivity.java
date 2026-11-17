@@ -22,6 +22,7 @@ public class MainActivity extends AppActivity {
 
     private boolean selecting, loading;
     private final LinkedHashSet<String> selected = new LinkedHashSet<>();
+    private final LinkedHashSet<String> expanded = new LinkedHashSet<>();
     private final List<Object> rows = new ArrayList<>();
     private final List<Category> cats = new ArrayList<>();
     private List<Entry> entries = new ArrayList<>();
@@ -45,6 +46,8 @@ public class MainActivity extends AppActivity {
             selecting = state.getBoolean("selecting");
             ArrayList<String> ids = state.getStringArrayList("selected");
             if (ids != null) selected.addAll(ids);
+            ArrayList<String> exp = state.getStringArrayList("expanded");
+            if (exp != null) expanded.addAll(exp);
             Bundle saved = state.getBundle("positions");
             if (saved != null)
                 for (String k : saved.keySet()) positions.put(k, saved.getParcelable(k));
@@ -116,7 +119,7 @@ public class MainActivity extends AppActivity {
                     else {
                         Entry e = (Entry) item;
                         if (selecting) toggle(e.id);
-                        else openDetail(e.id);
+                        else toggleExpand(e.id);
                     }
                 });
         list.setOnItemLongClickListener(
@@ -126,6 +129,7 @@ public class MainActivity extends AppActivity {
                     Object item = rows.get(index);
                     if (item instanceof Entry) {
                         selecting = true;
+                        expanded.clear();
                         selected.add(((Entry) item).id);
                         selectionUi();
                     } else folderActions((Category) item);
@@ -174,6 +178,7 @@ public class MainActivity extends AppActivity {
             filter = 0;
             selecting = false;
             selected.clear();
+            expanded.clear();
             intent.removeExtra("category");
         }
     }
@@ -209,6 +214,7 @@ public class MainActivity extends AppActivity {
         state.putString("category", category);
         state.putBoolean("selecting", selecting);
         state.putStringArrayList("selected", new ArrayList<>(selected));
+        state.putStringArrayList("expanded", new ArrayList<>(expanded));
         Bundle saved = new Bundle();
         for (Map.Entry<String, Parcelable> e : positions.entrySet())
             saved.putParcelable(e.getKey(), e.getValue());
@@ -286,6 +292,7 @@ public class MainActivity extends AppActivity {
                     Set<String> valid = new HashSet<>();
                     for (Entry e : entries) valid.add(e.id);
                     selected.retainAll(valid);
+                    expanded.retainAll(valid);
                     render();
                     positionKey = destination;
                     Parcelable restored = positions.get(destination);
@@ -338,6 +345,7 @@ public class MainActivity extends AppActivity {
         tab = value;
         selecting = false;
         selected.clear();
+        expanded.clear();
         navigation();
         reload();
     }
@@ -349,6 +357,7 @@ public class MainActivity extends AppActivity {
         tab = 1;
         filter = 0;
         selected.clear();
+        expanded.clear();
         reload();
     }
 
@@ -360,6 +369,7 @@ public class MainActivity extends AppActivity {
         category = parent;
         selecting = false;
         selected.clear();
+        expanded.clear();
         reload();
     }
 
@@ -557,11 +567,19 @@ public class MainActivity extends AppActivity {
     }
 
     private void pageActions() {
+        boolean compact = ThemePrefs.isCompactList(this);
+        String densityLabel = compact ? "切换为完整标题" : "切换为紧凑列表";
         if (tab == 0 || category != null) {
-            List<String> labels = new ArrayList<>(Arrays.asList("添加收藏（单条 / 批量）", "排序方式", "多选"));
+            List<String> labels =
+                    new ArrayList<>(
+                            Arrays.asList("添加收藏（单条 / 批量）", "排序方式", "多选", densityLabel));
             List<Integer> icons =
                     new ArrayList<>(
-                            Arrays.asList(R.drawable.ic_add, R.drawable.ic_sort, R.drawable.ic_check));
+                            Arrays.asList(
+                                    R.drawable.ic_add,
+                                    R.drawable.ic_sort,
+                                    R.drawable.ic_check,
+                                    R.drawable.ic_theme));
             if (tab == 1) {
                 labels.add("新建子分类");
                 icons.add(R.drawable.ic_folder);
@@ -583,28 +601,42 @@ public class MainActivity extends AppActivity {
                         if (w == 1) chooseSort();
                         if (w == 2) {
                             selecting = true;
+                            expanded.clear();
                             selectionUi();
                         }
-                        if (w == 3) {
+                        if (w == 3) toggleCompactMode();
+                        if (w == 4) {
                             if (tab == 1) manageFolder("create", category);
                             else manage(false);
                         }
-                        if (w == 4) manageFolder("edit", category);
+                        if (w == 5) manageFolder("edit", category);
                     });
         } else
             Ui.menuSheet(
                     this,
                     "文件夹操作",
-                    new String[] {"新建分类", "分类管理", "标签管理", "添加收藏（单条 / 批量）"},
+                    new String[] {"新建分类", "分类管理", "标签管理", "添加收藏（单条 / 批量）", densityLabel},
                     new int[] {
-                        R.drawable.ic_add, R.drawable.ic_folder, R.drawable.ic_tag, R.drawable.ic_import
+                        R.drawable.ic_add,
+                        R.drawable.ic_folder,
+                        R.drawable.ic_tag,
+                        R.drawable.ic_import,
+                        R.drawable.ic_theme
                     },
                     (d, w) -> {
                         if (w == 0) manageFolder("create", null);
                         if (w == 1) manage(false);
                         if (w == 2) manage(true);
                         if (w == 3) openImport();
+                        if (w == 4) toggleCompactMode();
                     });
+    }
+
+    private void toggleCompactMode() {
+        boolean nextCompact = !ThemePrefs.isCompactList(this);
+        ThemePrefs.setCompactList(this, nextCompact);
+        if (adapter != null) adapter.notifyDataSetChanged();
+        Ui.toast(this, nextCompact ? "已切换为紧凑列表（点卡片展开全文）" : "已切换为完整标题显示");
     }
 
     private void folderActions(Category c) {
@@ -686,7 +718,7 @@ public class MainActivity extends AppActivity {
                             this,
                             R.drawable.ill_empty_vault,
                             "还没有星标收藏",
-                            "轻点条目右侧的星标图标，把常用内容放在手边",
+                            "轻点条目展开后点击「星标」，把常用内容放在手边",
                             "查看全部收藏",
                             () -> {
                                 rememberPosition();
@@ -798,7 +830,10 @@ public class MainActivity extends AppActivity {
                 Design.action(
                         this,
                         "外观与偏好",
-                        "主题：" + ThemePrefs.themeLabel(this),
+                        "主题："
+                                + ThemePrefs.themeLabel(this)
+                                + " · 列表："
+                                + (ThemePrefs.isCompactList(this) ? "紧凑标题" : "完整标题"),
                         R.drawable.ic_theme,
                         () -> settings("appearance")));
         Design.gap(this, header, 8);
@@ -832,6 +867,7 @@ public class MainActivity extends AppActivity {
                 .setTitle("更快用好收藏夹")
                 .setMessage(
                         "添加收藏：点右下角「添加」粘贴，一条或多条自动识别。预览清单可直接设置各条的分类、标签、标题和备注。\n\n"
+                                + "浏览与展开：列表默认紧凑显示编号与标签，轻点任意条目可展开完整标题、备注及「打开 / 复制 / 星标 / 详情」按钮。\n\n"
                                 + "迁移整理：清单内搜索、勾选可分组设置分类和标签，也支持粘贴带标题、链接、分类、标签列的表格。\n\n"
                                 + "整理收藏：进入「整理」管理分类和标签。建错的标签可改名、合并或删除。\n\n"
                                 + "批量操作：在更多菜单点「多选」或长按收藏，可移动分类、添加标签、星标或移入回收站。\n\n"
@@ -1005,32 +1041,86 @@ public class MainActivity extends AppActivity {
         reload();
     }
 
+    private void toggleExpand(String id) {
+        if (!expanded.remove(id)) expanded.add(id);
+        if (adapter != null) adapter.notifyDataSetChanged();
+    }
+
+    private void toggleStarEntry(Entry e) {
+        final boolean next = !e.starred;
+        e.starred = next;
+        starred += next ? 1 : -1;
+        if (starred < 0) starred = 0;
+        if (tab == 0 && filter == 1 && !next) {
+            expanded.remove(e.id);
+            load(
+                    () -> {
+                        Repo.setStar(MainActivity.this, e.id, next);
+                        return true;
+                    },
+                    ok -> reload());
+        } else {
+            buildToolbar();
+            if (adapter != null) adapter.notifyDataSetChanged();
+            load(
+                    () -> {
+                        Repo.setStar(MainActivity.this, e.id, next);
+                        return true;
+                    },
+                    ok -> {});
+        }
+    }
+
+    private final EntryCard.Actions entryActionsListener =
+            new EntryCard.Actions() {
+                @Override
+                public void onOpen(Entry entry) {
+                    Ui.openMagnet(MainActivity.this, entry.magnet);
+                }
+
+                @Override
+                public void onCopy(Entry entry) {
+                    Ui.copy(MainActivity.this, entry.magnet);
+                }
+
+                @Override
+                public void onToggleStar(Entry entry) {
+                    toggleStarEntry(entry);
+                }
+
+                @Override
+                public void onDetail(Entry entry) {
+                    openDetail(entry.id);
+                }
+
+                @Override
+                public void onMore(Entry entry) {
+                    entryActions(entry);
+                }
+            };
+
     private void entryActions(Entry e) {
         Ui.menuSheet(
                 this,
                 e.displayTitle(),
-                new String[] {"打开链接", "复制链接", "编辑收藏", "多选", "移入回收站"},
+                new String[] {"编辑收藏", "分享链接", "多选", "移入回收站"},
                 new int[] {
-                    R.drawable.ic_play,
-                    R.drawable.ic_copy,
-                    R.drawable.ic_edit,
-                    R.drawable.ic_check,
-                    R.drawable.ic_trash
+                    R.drawable.ic_edit, R.drawable.ic_share, R.drawable.ic_check, R.drawable.ic_trash
                 },
                 (d, w) -> {
-                    if (w == 0) Ui.openMagnet(this, e.magnet);
-                    if (w == 1) Ui.copy(this, e.magnet);
-                    if (w == 2) {
+                    if (w == 0) {
                         Intent i = new Intent(this, EditActivity.class);
                         i.putExtra(EditActivity.EXTRA_ENTRY_ID, e.id);
                         startActivity(i);
                     }
-                    if (w == 3) {
+                    if (w == 1) Ui.share(this, e.magnet);
+                    if (w == 2) {
                         selecting = true;
+                        expanded.clear();
                         selected.add(e.id);
                         selectionUi();
                     }
-                    if (w == 4)
+                    if (w == 3)
                         new AlertDialog.Builder(this)
                                 .setTitle("移入回收站？")
                                 .setMessage(e.displayTitle() + "\n可在「我的 → 回收站」恢复。")
@@ -1044,6 +1134,7 @@ public class MainActivity extends AppActivity {
                                                             return true;
                                                         },
                                                         ok -> {
+                                                            expanded.remove(e.id);
                                                             reload();
                                                             Ui.toast(this, "已移入回收站");
                                                         }))
@@ -1156,93 +1247,22 @@ public class MainActivity extends AppActivity {
                         });
                 return view;
             }
-            EntryHolder h;
-            if (recycled == null || !(recycled.getTag() instanceof EntryHolder)) {
-                recycled = getLayoutInflater().inflate(R.layout.item_entry, parent, false);
-                h = new EntryHolder();
-                h.title = recycled.findViewById(R.id.item_title);
-                h.sub = recycled.findViewById(R.id.item_sub);
-                h.proto = recycled.findViewById(R.id.item_proto);
-                h.star = recycled.findViewById(R.id.item_star);
-                h.more = recycled.findViewById(R.id.item_more);
-                h.badge = recycled.findViewById(R.id.item_badge);
-                h.icon = recycled.findViewById(R.id.item_icon);
-                h.card = recycled.findViewById(R.id.entry_card);
-                recycled.setTag(h);
-            } else h = (EntryHolder) recycled.getTag();
+            View view = recycled;
+            if (view == null || !(view.getTag() instanceof EntryCard.Holder)) {
+                view = EntryCard.inflate(MainActivity.this, parent);
+            }
             Entry e = (Entry) rows.get(pos);
-            boolean ed2k = MagnetParser.isEd2k(e.magnet);
-            h.title.setText(e.displayTitle());
-
-            h.proto.setText(ed2k ? "ED2K" : "BT");
-            h.proto.setTextColor(Design.color(MainActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
-            h.proto.setBackgroundResource(ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
-
-            String meta = e.categoryId == null ? "未分类" : e.categoryName;
-            if (ed2k) {
-                long sz = MagnetParser.xlSize(e.magnet);
-                if (sz > 0) meta += " · " + Ui.sizeText(sz);
-            }
-            if (!e.tags.isEmpty()) meta += " · " + e.tagText();
-            else
-                meta +=
-                        " · "
-                                + new java.text.SimpleDateFormat("MM月dd日", Locale.CHINA)
-                                        .format(new Date(e.createdAt));
-            h.sub.setText(meta);
-
-            boolean picked = selected.contains(e.id);
-            h.card.setBackgroundResource(picked ? R.drawable.bg_card_selected : R.drawable.bg_card);
-            if (selecting) {
-                h.badge.setBackgroundResource(R.drawable.bg_badge_magnet);
-                h.icon.setImageResource(picked ? R.drawable.ic_check : R.drawable.ic_circle);
-                h.icon.setColorFilter(
-                        Design.color(
-                                MainActivity.this, picked ? R.color.c_accent : R.color.c_text2));
-            } else {
-                h.badge.setBackgroundResource(
-                        ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
-                h.icon.setImageResource(ed2k ? R.drawable.ic_file : R.drawable.ic_magnet);
-                h.icon.setColorFilter(
-                        Design.color(
-                                MainActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
-            }
-
-            h.star.setImageResource(e.starred ? R.drawable.ic_star : R.drawable.ic_star_outline);
-            h.star.setColorFilter(
-                    Design.color(
-                            MainActivity.this, e.starred ? R.color.c_star : R.color.c_text2));
-            h.star.setContentDescription((e.starred ? "取消星标 " : "添加星标 ") + e.displayTitle());
-            h.star.setVisibility(selecting ? View.GONE : View.VISIBLE);
-            h.more.setVisibility(selecting ? View.GONE : View.VISIBLE);
-            h.star.setOnClickListener(
-                    v -> {
-                        final boolean next = !e.starred;
-                        e.starred = next;
-                        starred += next ? 1 : -1;
-                        if (starred < 0) starred = 0;
-                        if (tab == 0 && filter == 1 && !next) {
-                            load(
-                                    () -> {
-                                        Repo.setStar(MainActivity.this, e.id, next);
-                                        return true;
-                                    },
-                                    ok -> reload());
-                        } else {
-                            buildToolbar();
-                            adapter.notifyDataSetChanged();
-                            load(
-                                    () -> {
-                                        Repo.setStar(MainActivity.this, e.id, next);
-                                        return true;
-                                    },
-                                    ok -> {});
-                        }
-                    });
-            h.more.setContentDescription("更多操作 " + e.displayTitle());
-            h.more.setOnClickListener(v -> entryActions(e));
-            recycled.setSelected(picked);
-            return recycled;
+            EntryCard.bind(
+                    MainActivity.this,
+                    view,
+                    e,
+                    ThemePrefs.isCompactList(MainActivity.this),
+                    expanded.contains(e.id),
+                    selecting,
+                    selected.contains(e.id),
+                    tab == 1 ? category : null,
+                    entryActionsListener);
+            return view;
         }
     }
 
@@ -1252,11 +1272,5 @@ public class MainActivity extends AppActivity {
         ImageView icon;
         ImageButton more;
         View line;
-    }
-
-    private static class EntryHolder {
-        TextView title, sub, proto;
-        ImageView icon, star;
-        View more, card, badge;
     }
 }

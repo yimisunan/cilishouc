@@ -2,7 +2,7 @@
 
 用于收藏和整理磁力、ED2K 文件链接的 Android 应用。只保存链接与文字元数据，不下载、缓存或解析媒体本体和种子文件。
 
-当前源码版本：**2.4.2**。包名：`com.magnetvault.app`。支持 Android 8.0（API 26）及以上版本，targetSdk 34。
+当前源码版本：**2.4.3**。包名：`com.magnetvault.app`。支持 Android 8.0（API 26）及以上版本，targetSdk 34。
 
 ## 下载与更新
 
