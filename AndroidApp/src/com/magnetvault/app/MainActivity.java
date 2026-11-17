@@ -941,27 +941,21 @@ public class MainActivity extends AppActivity {
         List<String> ids = new ArrayList<>(selected);
         if (ids.isEmpty()) return;
         if (which == 0) {
-            List<String> names = new ArrayList<>();
-            List<String> catIds = new ArrayList<>();
-            names.add("未分类");
-            catIds.add(null);
-            for (Category c : cats) {
-                names.add(Repo.categoryLabel(this, c.id));
-                catIds.add(c.id);
-            }
-            new AlertDialog.Builder(this)
-                    .setTitle("将 " + ids.size() + " 条收藏移动到")
-                    .setItems(
-                            names.toArray(new String[0]),
-                            (d, w) ->
-                                    load(
-                                            () -> {
-                                                Repo.moveCategory(this, ids, catIds.get(w));
-                                                return true;
-                                            },
-                                            ok -> batchDone("收藏已移动")))
-                    .setNegativeButton("取消", null)
-                    .show();
+            CategoryPicker.show(
+                    this,
+                    "将 " + ids.size() + " 条收藏移动到",
+                    tab == 1 ? category : null,
+                    "未分类",
+                    "移出文件夹，设为未分类",
+                    null,
+                    true,
+                    catId ->
+                            load(
+                                    () -> {
+                                        Repo.moveCategory(this, ids, catId);
+                                        return true;
+                                    },
+                                    ok -> batchDone("收藏已移动")));
         }
         if (which == 1)
             TagPicker.show(

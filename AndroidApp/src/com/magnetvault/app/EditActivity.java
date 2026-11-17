@@ -6,9 +6,8 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.Spinner;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public class EditActivity extends AppActivity {
     private Entry existing;
 
     private final List<Category> cats = new ArrayList<>();
-    private final List<String> catIds = new ArrayList<>();
+    private String pickedCategoryId;
 
     private EditText inputMagnet;
     private EditText inputTitle;
@@ -38,7 +37,7 @@ public class EditActivity extends AppActivity {
     private EditText inputSource;
     private TextView parseHint;
     private TextView headerTitle;
-    private Spinner spinner;
+    private CategoryPicker.Card categoryCard;
     private ChipFlow tagFlow;
 
     /** 已选标签（点选式，不再手打） */
@@ -56,7 +55,13 @@ public class EditActivity extends AppActivity {
         inputSource = findViewById(R.id.input_source);
         parseHint = findViewById(R.id.parse_hint);
         headerTitle = findViewById(R.id.header_title);
-        spinner = findViewById(R.id.input_category);
+        FrameLayout categorySlot = findViewById(R.id.category_slot);
+        categoryCard = CategoryPicker.selectorCard(this, this::openCategoryPicker);
+        categorySlot.addView(
+                categoryCard.root,
+                new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT));
 
         findViewById(R.id.btn_back).setOnClickListener(v -> onBackPressed());
         findViewById(R.id.btn_save).setOnClickListener(v -> doSave());
@@ -83,7 +88,7 @@ public class EditActivity extends AppActivity {
             headerTitle.setText("编辑收藏");
         }
 
-        setupSpinner();
+        reloadCategories();
 
         if (existing != null) {
             inputMagnet.setText(existing.magnet);
@@ -92,15 +97,12 @@ public class EditActivity extends AppActivity {
             pickedTags.addAll(existing.tags);
             inputNote.setText(existing.note);
             inputSource.setText(existing.source);
-            selectCategory(existing.categoryId);
+            pickedCategoryId = normalizeCategoryId(existing.categoryId);
         } else {
             // 新建：默认存进"你当前所在的那个文件夹"
-            String def = getIntent().getStringExtra(EXTRA_DEFAULT_CATEGORY);
-            if (def != null) {
-                selectCategory(def);
-            }
+            pickedCategoryId =
+                    normalizeCategoryId(getIntent().getStringExtra(EXTRA_DEFAULT_CATEGORY));
         }
-        refreshTagField();
 
         // 标签：点击弹出选择器，而不是让你手打
         Runnable openTags =
@@ -136,57 +138,56 @@ public class EditActivity extends AppActivity {
             java.util.ArrayList<String> restored =
                     savedInstanceState.getStringArrayList("pickedTags");
             if (restored != null) pickedTags.addAll(restored);
-            refreshTagField();
+            if (savedInstanceState.containsKey("pickedCategoryId")) {
+                pickedCategoryId =
+                        normalizeCategoryId(savedInstanceState.getString("pickedCategoryId"));
+            }
             baseline = savedInstanceState.getString("baseline");
         }
+        refreshCategoryCard();
+        refreshTagField();
         if (baseline == null) baseline = snapshot();
         ready = true;
         updateHint(inputMagnet.getText().toString());
     }
 
-    private void setupSpinner() {
+    private void reloadCategories() {
         cats.clear();
         cats.addAll(Repo.categories(this, false));
-        catIds.clear();
-        List<String> names = new ArrayList<>();
-        names.add("未分类");
-        catIds.add(null);
+    }
+
+    private String normalizeCategoryId(String id) {
+        if (id == null) return null;
         for (Category c : cats) {
-            // 分类树之后用"父 / 子"全名，避免同名分不清
-            names.add(pathName(c));
-            catIds.add(c.id);
+            if (id.equals(c.id)) return id;
         }
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, names);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
+        return null;
     }
 
-    private void selectCategory(String categoryId) {
-        if (categoryId == null) {
-            spinner.setSelection(0);
-            return;
-        }
-        for (int i = 0; i < catIds.size(); i++) {
-            if (categoryId.equals(catIds.get(i))) {
-                spinner.setSelection(i);
-                return;
-            }
-        }
-        spinner.setSelection(0);
+    private void refreshCategoryCard() {
+        CategoryPicker.bindSelectorCard(
+                this,
+                categoryCard,
+                cats,
+                pickedCategoryId,
+                "未分类",
+                "按层级浏览或搜索分类");
     }
 
-    /** "父 / 子" 形式全名。 */
-    private String pathName(Category c) {
-        List<Category> path = Repo.categoryPath(this, c.id);
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < path.size(); i++) {
-            if (i > 0) {
-                sb.append(" / ");
-            }
-            sb.append(path.get(i).name);
-        }
-        return sb.length() == 0 ? c.name : sb.toString();
+    private void openCategoryPicker() {
+        CategoryPicker.show(
+                this,
+                "选择分类",
+                pickedCategoryId,
+                "未分类",
+                "不归入任何文件夹",
+                null,
+                true,
+                id -> {
+                    pickedCategoryId = id;
+                    reloadCategories();
+                    refreshCategoryCard();
+                });
     }
 
     private void updateHint(String text) {
@@ -248,8 +249,7 @@ public class EditActivity extends AppActivity {
         if (e.title.isEmpty()) e.title = MagnetParser.titleFromLink(link);
         e.note = inputNote.getText().toString().trim();
         e.source = inputSource.getText().toString().trim();
-        int pos = spinner.getSelectedItemPosition();
-        e.categoryId = (pos >= 0 && pos < catIds.size()) ? catIds.get(pos) : null;
+        e.categoryId = pickedCategoryId;
         e.tags = new ArrayList<>(pickedTags);
 
         Entry dup = Repo.findDuplicate(this, e.normalized, e.magnet, e.id);
@@ -294,7 +294,6 @@ public class EditActivity extends AppActivity {
     }
 
     private String snapshot() {
-        int position = spinner.getSelectedItemPosition();
         return inputMagnet.getText()
                 + "\u0002"
                 + inputTitle.getText()
@@ -303,13 +302,14 @@ public class EditActivity extends AppActivity {
                 + "\u0002"
                 + inputNote.getText()
                 + "\u0002"
-                + position
+                + (pickedCategoryId == null ? "" : pickedCategoryId)
                 + "\u0002"
                 + pickedTags.toString();
     }
 
     @Override
     protected void onSaveInstanceState(Bundle state) {
+        state.putString("pickedCategoryId", pickedCategoryId);
         state.putStringArrayList("pickedTags", new ArrayList<>(pickedTags));
         state.putString("baseline", baseline);
         super.onSaveInstanceState(state);

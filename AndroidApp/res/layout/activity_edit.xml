@@ -139,19 +139,11 @@
                 android:textStyle="bold" />
 
             <FrameLayout
+                android:id="@+id/category_slot"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="14dp"
-                android:layout_marginRight="14dp"
-                android:background="@drawable/bg_card"
-                android:paddingLeft="6dp"
-                android:paddingRight="6dp">
-
-                <Spinner
-                    android:id="@+id/input_category"
-                    android:layout_width="match_parent"
-                    android:layout_height="50dp" />
-            </FrameLayout>
+                android:layout_marginRight="14dp" />
 
             <TextView
                 style="@style/FieldLabel"

@@ -571,61 +571,37 @@ public class CategoryActivity extends AppActivity {
     }
 
     private void move(Category source) {
-        List<String> ids = new ArrayList<>();
-        List<String> names = new ArrayList<>();
-        ids.add(null);
-        names.add("顶层分类");
-        for (Category c : categories) {
-            boolean descendant = false;
-            Category cur = c;
-            Set<String> seen = new HashSet<>();
-            while (cur != null && seen.add(cur.id)) {
-                if (cur.id.equals(source.id)) {
-                    descendant = true;
-                    break;
+        Set<String> excluded = new HashSet<>();
+        excluded.add(source.id);
+        boolean added = true;
+        while (added) {
+            added = false;
+            for (Category c : categories) {
+                if (!excluded.contains(c.id) && excluded.contains(c.parentId)) {
+                    excluded.add(c.id);
+                    added = true;
                 }
-                Category next = null;
-                for (Category p : categories)
-                    if (p.id.equals(cur.parentId)) {
-                        next = p;
-                        break;
-                    }
-                cur = next;
-            }
-            if (!descendant) {
-                ids.add(c.id);
-                names.add(path(c));
             }
         }
-        new AlertDialog.Builder(this)
-                .setTitle("移动到")
-                .setItems(
-                        names.toArray(new String[0]),
-                        (d, w) ->
-                                load(
-                                        () -> Repo.setCategoryParent(this, source.id, ids.get(w)),
-                                        error -> {
-                                            Ui.toast(this, error == null ? "已移动分类" : error);
-                                            reload();
-                                        }))
-                .setNegativeButton("取消", null)
-                .show();
+        CategoryPicker.show(
+                this,
+                "移动「" + source.name + "」到",
+                source.parentId,
+                "设为顶层分类",
+                "放在根目录作为一级文件夹",
+                excluded,
+                false,
+                newParentId ->
+                        load(
+                                () -> Repo.setCategoryParent(this, source.id, newParentId),
+                                error -> {
+                                    Ui.toast(this, error == null ? "已移动分类" : error);
+                                    reload();
+                                }));
     }
 
     private void delete(Category c) {
-        List<String> ids = new ArrayList<>();
-        List<String> names = new ArrayList<>();
-        ids.add(null);
-        names.add("移到未分类");
-        for (Category target : categories)
-            if (!target.id.equals(c.id)) {
-                ids.add(target.id);
-                names.add("移到 " + path(target));
-            }
-        Spinner target = new Spinner(this);
-        target.setMinimumHeight(Ui.dp(this, 48));
-        target.setAdapter(
-                new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names));
+        final String[] targetId = {null};
         LinearLayout box = Design.column(this);
         Design.pad(this, box, 24, 8, 16);
         box.addView(
@@ -639,25 +615,53 @@ public class CategoryActivity extends AppActivity {
                         15,
                         R.color.c_text2));
         Design.label(this, box, "收藏保留位置");
-        box.addView(target);
+        final CategoryPicker.Card[] cardRef = {null};
+        cardRef[0] =
+                CategoryPicker.selectorCard(
+                        this,
+                        () ->
+                                CategoryPicker.show(
+                                        this,
+                                        "选择收藏保留位置",
+                                        targetId[0],
+                                        "移到未分类",
+                                        "清除这些收藏的分类归属",
+                                        Collections.singleton(c.id),
+                                        false,
+                                        pickedId -> {
+                                            targetId[0] = pickedId;
+                                            CategoryPicker.bindSelectorCard(
+                                                    this,
+                                                    cardRef[0],
+                                                    categories,
+                                                    targetId[0],
+                                                    "移到未分类",
+                                                    "清除这些收藏的分类归属");
+                                        }));
+        CategoryPicker.bindSelectorCard(
+                this,
+                cardRef[0],
+                categories,
+                targetId[0],
+                "移到未分类",
+                "清除这些收藏的分类归属");
+        box.addView(cardRef[0].root);
         new AlertDialog.Builder(this)
                 .setTitle("删除「" + c.name + "」？")
                 .setView(Design.scroll(this, box))
                 .setNegativeButton("取消", null)
                 .setPositiveButton(
                         "删除分类",
-                        (d, w) -> {
-                            String id = ids.get(target.getSelectedItemPosition());
-                            load(
-                                    () -> {
-                                        Repo.deleteCategory(this, c.id, id);
-                                        return true;
-                                    },
-                                    ok -> {
-                                        reload();
-                                        Ui.toast(this, "分类已删除，收藏已保留");
-                                    });
-                        })
+                        (d, w) ->
+                                load(
+                                        () -> {
+                                            Repo.deleteCategory(this, c.id, targetId[0]);
+                                            return true;
+                                        },
+                                        ok -> {
+                                            reload();
+                                            Ui.toast(this, "分类已删除，收藏已保留");
+                                        }))
                 .show();
     }
 

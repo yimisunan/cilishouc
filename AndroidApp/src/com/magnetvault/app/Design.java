@@ -352,7 +352,7 @@ public final class Design {
             if (pi != null && pi.versionName != null) return pi.versionName;
         } catch (Exception ignored) {
         }
-        return "2.4.0";
+        return "2.4.1";
     }
 
     /** Soft alpha version of an arbitrary folder color for icon badges. */
