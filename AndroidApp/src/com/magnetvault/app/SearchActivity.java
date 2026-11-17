@@ -1,8 +1,6 @@
 package com.magnetvault.app;
 
-import android.app.AlertDialog;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.*;
 import android.view.Gravity;
@@ -15,7 +13,8 @@ import java.util.*;
 /** Debounced search, clear filters, retained results and visible recovery actions. */
 public class SearchActivity extends AppActivity {
     public static final String EXTRA_CATEGORY_ID = "categoryId",
-            EXTRA_CATEGORY_NAME = "categoryName";
+            EXTRA_CATEGORY_NAME = "categoryName",
+            EXTRA_OPEN_TAG_PICKER = "openTagPicker";
     private String category;
     private boolean current;
     private int scope, request;
@@ -51,9 +50,9 @@ public class SearchActivity extends AppActivity {
         LinearLayout head = Design.column(this);
         Design.pad(this, head, 14, 4, 8);
 
-        // Search input box with leading search icon + trailing clear button
+        // Search input box with leading search icon, focus ring + trailing clear button
         LinearLayout searchBox = Design.row(this);
-        searchBox.setBackgroundResource(R.drawable.bg_card);
+        searchBox.setBackgroundResource(R.drawable.bg_input_box);
         searchBox.setMinimumHeight(Ui.dp(this, 50));
         Design.pad(this, searchBox, 12, 2, 2);
         ImageView searchIcon = new ImageView(this);
@@ -90,6 +89,7 @@ public class SearchActivity extends AppActivity {
         Design.pad(this, clearBtn, 10, 10, 10);
         clearBtn.setVisibility(View.GONE);
         searchBox.addView(clearBtn);
+        Design.focusWrap(searchBox, input);
         head.addView(searchBox);
 
         Design.gap(this, head, 10);
@@ -126,6 +126,7 @@ public class SearchActivity extends AppActivity {
                     if (pos < 0 || pos >= results.size()) return;
                     String entryId = results.get(pos).id;
                     if (!expanded.remove(entryId)) expanded.add(entryId);
+                    Design.animate(list);
                     adapter.notifyDataSetChanged();
                 });
         list.setOnItemLongClickListener(
@@ -160,6 +161,9 @@ public class SearchActivity extends AppActivity {
                     return true;
                 });
         styleFilters();
+        if (state == null && getIntent().getBooleanExtra(EXTRA_OPEN_TAG_PICKER, false)) {
+            root.post(this::openTagPicker);
+        }
     }
 
     @Override
@@ -192,6 +196,19 @@ public class SearchActivity extends AppActivity {
         chips.addView(b, p);
     }
 
+    private void openTagPicker() {
+        TagPicker.showFilter(
+                this,
+                "按标签筛选（任一匹配）",
+                selectedTags,
+                t -> {
+                    selectedTags.clear();
+                    selectedTags.addAll(t);
+                    styleFilters();
+                    search();
+                });
+    }
+
     private void styleFilters() {
         chips.removeAllViews();
         if (category != null)
@@ -205,39 +222,37 @@ public class SearchActivity extends AppActivity {
                         search();
                     });
         String[] scopes = {"全部字段", "标题", "标签", "备注"};
+        String[] scopeSubs = {
+            "同时匹配标题、链接、Hash、标签、备注与分类",
+            "只在收藏名称与片名中查找",
+            "只按已关联的标签名称查找",
+            "只在自定义备注文本中查找"
+        };
+        int[] scopeIcons = {
+            R.drawable.ic_search, R.drawable.ic_magnet, R.drawable.ic_tag, R.drawable.ic_edit
+        };
         chip(
                 scope == 0 ? "搜索范围" : "仅" + scopes[scope],
                 R.drawable.ic_chevron_down,
                 scope != 0,
                 () ->
-                        new AlertDialog.Builder(this)
-                                .setTitle("搜索哪些内容")
-                                .setSingleChoiceItems(
-                                        scopes,
-                                        scope,
-                                        (d, w) -> {
-                                            scope = w;
-                                            d.dismiss();
-                                            styleFilters();
-                                            search();
-                                        })
-                                .setNegativeButton("取消", null)
-                                .show());
+                        Ui.choiceSheet(
+                                this,
+                                "搜索范围",
+                                scopes,
+                                scopeSubs,
+                                scopeIcons,
+                                scope,
+                                w -> {
+                                    scope = w;
+                                    styleFilters();
+                                    search();
+                                }));
         chip(
                 selectedTags.isEmpty() ? "筛选标签" : "标签 · " + selectedTags.size(),
                 R.drawable.ic_tag,
                 !selectedTags.isEmpty(),
-                () ->
-                        TagPicker.showFilter(
-                                this,
-                                "按标签筛选（任一匹配）",
-                                selectedTags,
-                                t -> {
-                                    selectedTags.clear();
-                                    selectedTags.addAll(t);
-                                    styleFilters();
-                                    search();
-                                }));
+                this::openTagPicker);
         if (!selectedTags.isEmpty() || scope != 0 || current)
             chip(
                     "清除筛选",
@@ -276,17 +291,7 @@ public class SearchActivity extends AppActivity {
                     "查找收藏",
                     "支持搜索标题、Hash、标签、备注或来源",
                     "按标签筛选",
-                    () ->
-                            TagPicker.showFilter(
-                                    this,
-                                    "按标签筛选（任一匹配）",
-                                    selectedTags,
-                                    t -> {
-                                        selectedTags.clear();
-                                        selectedTags.addAll(t);
-                                        styleFilters();
-                                        search();
-                                    }));
+                    this::openTagPicker);
             return;
         }
         status.setText("正在查找…");
@@ -362,24 +367,23 @@ public class SearchActivity extends AppActivity {
                     } else if (w == 1) {
                         Ui.share(this, e.magnet);
                     } else if (w == 2) {
-                        new AlertDialog.Builder(this)
-                                .setTitle("移入回收站？")
-                                .setMessage(e.displayTitle() + "\n可在「我的 → 回收站」恢复。")
-                                .setNegativeButton("取消", null)
-                                .setPositiveButton(
-                                        "移入回收站",
-                                        (x, y) ->
-                                                load(
-                                                        () -> {
-                                                            Repo.softDelete(this, e.id);
-                                                            return true;
-                                                        },
-                                                        ok -> {
-                                                            expanded.remove(e.id);
-                                                            search();
-                                                            Ui.toast(this, "已移入回收站");
-                                                        }))
-                                .show();
+                        Ui.confirmSheet(
+                                this,
+                                "移入回收站？",
+                                e.displayTitle() + "\n之后可在「我的 → 回收站」恢复。",
+                                "移入回收站",
+                                true,
+                                () ->
+                                        load(
+                                                () -> {
+                                                    Repo.softDelete(this, e.id);
+                                                    return true;
+                                                },
+                                                ok -> {
+                                                    expanded.remove(e.id);
+                                                    search();
+                                                    Ui.toast(this, "已移入回收站");
+                                                }));
                     }
                 });
     }

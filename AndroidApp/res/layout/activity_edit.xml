@@ -37,6 +37,15 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <FrameLayout
+        android:id="@+id/mode_switch_slot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="14dp"
+        android:paddingTop="2dp"
+        android:paddingRight="14dp"
+        android:paddingBottom="4dp" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -45,6 +54,7 @@
         android:scrollbars="none">
 
         <LinearLayout
+            android:id="@+id/edit_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
@@ -72,22 +82,34 @@
                     android:textSize="13sp"
                     android:textStyle="bold" />
 
-                <TextView
+                <LinearLayout
                     android:id="@+id/btn_paste"
                     android:layout_width="wrap_content"
                     android:layout_height="34dp"
                     android:background="@drawable/bg_pill_on"
-                    android:drawableLeft="@drawable/ic_paste"
-                    android:drawablePadding="5dp"
-                    android:drawableTint="@color/c_accent"
+                    android:clickable="true"
                     android:focusable="true"
                     android:gravity="center"
+                    android:orientation="horizontal"
                     android:paddingLeft="11dp"
-                    android:paddingRight="12dp"
-                    android:text="从剪贴板粘贴"
-                    android:textColor="@color/c_accent"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
+                    android:paddingRight="12dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginRight="5dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_paste"
+                        android:tint="@color/c_accent" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="从剪贴板粘贴"
+                        android:textColor="@color/c_accent"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
             </LinearLayout>
 
             <EditText
@@ -112,14 +134,74 @@
                 android:textColor="@color/c_text2"
                 android:textSize="12sp" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_edit"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent2"
-                android:text="标题（可选，留空自动提取）"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:id="@+id/multi_link_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="14dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginRight="14dp"
+                android:background="@drawable/bg_hero"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_sparkle"
+                    android:tint="@color/c_accent" />
+
+                <TextView
+                    android:id="@+id/multi_link_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="1"
+                    android:textColor="@color/c_text"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="一键切换批量识别 ›"
+                    android:textColor="@color/c_accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_edit"
+                    android:tint="@color/c_accent2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="标题（可选，留空自动提取）"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/input_title"
@@ -129,14 +211,32 @@
                 android:inputType="text"
                 android:maxLines="3" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_folder"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent2"
-                android:text="分类"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_folder"
+                    android:tint="@color/c_accent2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="分类"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <FrameLayout
                 android:id="@+id/category_slot"
@@ -145,14 +245,32 @@
                 android:layout_marginLeft="14dp"
                 android:layout_marginRight="14dp" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_tag"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent2"
-                android:text="标签（点选，可多选）"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_tag"
+                    android:tint="@color/c_accent2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="标签（点选，可多选）"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/tag_card"
@@ -173,14 +291,32 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_edit"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_text2"
-                android:text="备注"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_edit"
+                    android:tint="@color/c_text2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="备注"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/input_note"
@@ -190,14 +326,32 @@
                 android:inputType="textMultiLine"
                 android:minLines="2" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_link"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent"
-                android:text="来源（可选，可填网址）"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_link"
+                    android:tint="@color/c_accent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="来源（可选，可填网址）"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/input_source"
@@ -216,21 +370,33 @@
         android:paddingRight="14dp"
         android:paddingBottom="14dp">
 
-        <TextView
+        <LinearLayout
             android:id="@+id/btn_save"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:background="@drawable/bg_fab"
-            android:drawableLeft="@drawable/ic_check"
-            android:drawablePadding="8dp"
-            android:drawableTint="@color/c_on_accent"
+            android:clickable="true"
             android:focusable="true"
             android:gravity="center"
+            android:orientation="horizontal"
             android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:text="@string/save"
-            android:textColor="@color/c_on_accent"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:paddingRight="24dp">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_marginRight="8dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_check"
+                android:tint="@color/c_on_accent" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/save"
+                android:textColor="@color/c_on_accent"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

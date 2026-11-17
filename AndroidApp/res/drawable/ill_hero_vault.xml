@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <!-- Ambient rounded badge background -->
+    <path
+        android:fillColor="@color/c_accent_soft"
+        android:pathData="M22,4 H50 Q68,4 68,22 V50 Q68,68 50,68 H22 Q4,68 4,50 V22 Q4,4 22,4 Z" />
+    <!-- Outer soft halo ring -->
+    <path
+        android:pathData="M14,36 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0 Z"
+        android:strokeColor="@color/c_card"
+        android:strokeWidth="2.5" />
+    <!-- Vault shield -->
+    <path
+        android:fillColor="@color/c_accent"
+        android:pathData="M36,15 L53,21.5 V34.8 C53,46.4 45.8,55.2 36,58.5 C26.2,55.2 19,46.4 19,34.8 V21.5 L36,15 Z" />
+    <!-- Horseshoe magnet -->
+    <path
+        android:pathData="M28.2,28 V35.2 A7.8,7.8 0 0,0 43.8,35.2 V28"
+        android:strokeColor="@color/c_card"
+        android:strokeWidth="4.0"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M26.2,28 H30.2 M41.8,28 H45.8"
+        android:strokeColor="@color/c_accent_soft"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round" />
+    <!-- Accent lock/orbit dot + sparkle -->
+    <path
+        android:fillColor="@color/c_accent2_soft"
+        android:pathData="M48,14.5 a6.5,6.5 0 1,0 13,0 a6.5,6.5 0 1,0 -13,0 Z"
+        android:strokeColor="@color/c_card"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="@color/c_accent2"
+        android:pathData="M54.5,10.8 L55.5,13.5 L58.2,14.5 L55.5,15.5 L54.5,18.2 L53.5,15.5 L50.8,14.5 L53.5,13.5 Z" />
+</vector>

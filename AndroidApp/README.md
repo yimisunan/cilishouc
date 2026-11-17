@@ -68,7 +68,7 @@ bash AndroidApp/build.sh
 | --- | --- |
 | 本地数据与分类、标签 | `Db`、`Repo`、`Entry`、`Category` |
 | 链接识别与导入预览 | `MagnetParser`、`ImportTextParser`、`ImportDraft`、`ClipImporter`、`ImportActivity` |
-| 收藏、搜索与整理页面 | `MainActivity`、`SearchActivity`、`DetailActivity`、`EditActivity`、`CategoryActivity`、`CategoryPicker`、`TagPicker` |
+| 收藏、搜索与整理页面 | `MainActivity`、`SearchActivity`、`DetailActivity`、`EditActivity`、`CategoryActivity`、`CategoryEditor`、`CategoryPicker`、`TagPicker` |
 | 加密备份与恢复 | `BackupCrypto`、`BackupManager`、`RestoreFlow`、`SecretStore` |
 | 坚果云与自动备份 | `WebDavClient`、`SimpleHttpClient`、`CloudBackup`、`BackupJob`、`DavActivity`、`CloudActivity` |
 | 设置与界面组件 | `SettingsActivity`、`ThemePrefs`、`Design`、`Ui`、`AppActivity` |

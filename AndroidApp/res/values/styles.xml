@@ -59,14 +59,14 @@
         <item name="android:textSize">15sp</item>
     </style>
 
-    <!-- 输入框：卡片底 -->
+    <!-- 输入框：焦点高亮边 -->
     <style name="FieldInput">
         <item name="android:minHeight">52dp</item>
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginLeft">14dp</item>
         <item name="android:layout_marginRight">14dp</item>
-        <item name="android:background">@drawable/bg_card</item>
+        <item name="android:background">@drawable/bg_input_box</item>
         <item name="android:paddingLeft">14dp</item>
         <item name="android:paddingRight">14dp</item>
         <item name="android:paddingTop">12dp</item>

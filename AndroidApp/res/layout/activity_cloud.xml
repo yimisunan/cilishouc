@@ -19,6 +19,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
             android:contentDescription="返回"
             android:focusable="true"
             android:padding="12dp"
@@ -30,7 +31,9 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="6dp"
             android:layout_weight="1"
-            android:text="云端备份"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="备份与云端中心"
             android:textColor="@color/c_header_text"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -40,6 +43,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
             android:contentDescription="刷新"
             android:focusable="true"
             android:padding="12dp"
@@ -47,75 +51,14 @@
             android:tint="@color/c_accent" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tv_summary"
-        style="@style/CardPanel"
-        android:layout_marginTop="8dp"
-        android:lineSpacingExtra="4dp"
-        android:textColor="@color/c_text2"
-        android:textSize="13sp" />
-
-    <TextView
-        android:id="@+id/btn_backup"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_marginLeft="14dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginRight="14dp"
-        android:background="@drawable/bg_fab"
-        android:drawableLeft="@drawable/ic_import"
-        android:drawablePadding="8dp"
-        android:drawableTint="@color/c_on_accent"
-        android:focusable="true"
-        android:gravity="center"
-        android:minHeight="48dp"
-        android:paddingLeft="20dp"
-        android:paddingRight="20dp"
-        android:text="立即备份到坚果云"
-        android:textColor="@color/c_on_accent"
-        android:textSize="15sp"
-        android:textStyle="bold" />
-
-    <FrameLayout
+    <ListView
+        android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <TextView
-            android:id="@+id/tv_empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="36dp"
-            android:drawablePadding="14dp"
-            android:drawableTop="@drawable/ill_empty_cloud"
-            android:gravity="center"
-            android:lineSpacingExtra="5dp"
-            android:paddingLeft="24dp"
-            android:paddingRight="24dp"
-            android:text="云端还没有备份\n点上面的按钮上传第一份"
-            android:textColor="@color/c_text2"
-            android:textSize="13sp"
-            android:visibility="gone" />
-
-        <ListView
-            android:id="@+id/list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="10dp"
-            android:clipToPadding="false"
-            android:divider="@null"
-            android:paddingBottom="12dp"
-            android:scrollbars="none" />
-    </FrameLayout>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="18dp"
-        android:layout_marginRight="18dp"
-        android:layout_marginBottom="12dp"
-        android:lineSpacingExtra="4dp"
-        android:text="备份为客户端加密的 .mjbf 密文，坚果云只能看到密文。上传成功后会回读校验大小，不一致则判定失败。"
-        android:textColor="@color/c_text2"
-        android:textSize="12sp" />
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:paddingBottom="28dp"
+        android:scrollbars="none" />
 </LinearLayout>

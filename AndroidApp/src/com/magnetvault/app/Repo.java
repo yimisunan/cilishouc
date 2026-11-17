@@ -1069,28 +1069,94 @@ public final class Repo {
                         + "(SELECT id FROM audit_logs ORDER BY id DESC LIMIT 100)");
     }
 
-    public static String lastAuditText(Context ctx) {
+    public static final class AuditItem {
+        public final String title;
+        public final String detail;
+        public final String time;
+        public final boolean ok;
+
+        AuditItem(String title, String detail, String time, boolean ok) {
+            this.title = title;
+            this.detail = detail;
+            this.time = time;
+            this.ok = ok;
+        }
+    }
+
+    public static List<AuditItem> recentAudits(Context ctx, int limit) {
+        List<AuditItem> out = new ArrayList<>();
         Cursor c =
                 Db.get(ctx)
                         .getReadableDatabase()
                         .rawQuery(
                                 "SELECT type, result, message, entryCount, createdAt FROM"
-                                        + " audit_logs ORDER BY id DESC LIMIT 1",
-                                null);
+                                        + " audit_logs ORDER BY id DESC LIMIT ?",
+                                new String[] {String.valueOf(Math.max(1, limit))});
         try {
-            if (!c.moveToFirst()) {
-                return "暂无备份记录";
+            while (c.moveToNext()) {
+                String type = c.getString(0);
+                String result = c.getString(1);
+                String message = c.getString(2);
+                int count = c.getInt(3);
+                long at = c.getLong(4);
+                boolean ok = "SUCCESS".equalsIgnoreCase(result);
+                String title = friendlyAuditType(type, ok, result);
+                StringBuilder detail = new StringBuilder();
+                if (count > 0) detail.append(count).append(" 条");
+                if (message != null && !message.trim().isEmpty()) {
+                    if (detail.length() > 0) detail.append(" · ");
+                    detail.append(message.trim());
+                }
+                if (detail.length() == 0) detail.append(ok ? "已完成" : result);
+                out.add(new AuditItem(title, detail.toString(), Ui.time(at), ok));
             }
-            return c.getString(0)
-                    + " · "
-                    + c.getString(1)
-                    + " · "
-                    + Ui.time(c.getLong(4))
-                    + (c.getInt(3) > 0 ? " · " + c.getInt(3) + " 条" : "")
-                    + (c.getString(2).isEmpty() ? "" : "\n" + c.getString(2));
         } finally {
             c.close();
         }
+        return out;
+    }
+
+    private static String friendlyAuditType(String type, boolean ok, String result) {
+        if ("UPLOAD".equals(type)) return ok ? "上传加密备份到坚果云" : "上传坚果云失败";
+        if ("AUTO_BACKUP".equals(type))
+            return "SKIPPED".equalsIgnoreCase(result)
+                    ? "自动备份已跳过"
+                    : (ok ? "每日自动备份完成" : "每日自动备份失败");
+        if ("DOWNLOAD".equals(type)) return ok ? "下载云端加密备份" : "下载云端备份失败";
+        if ("DELETE_REMOTE".equals(type)) return "删除云端备份";
+        if ("EXPORT".equals(type)) return "导出加密备份文件";
+        if ("DAV_TEST".equals(type)) return ok ? "坚果云连接测试通过" : "坚果云连接测试失败";
+        if ("IMPORT_CLIP".equals(type)) return "批量导入收藏";
+        if ("IMPORT_INTENT".equals(type)) return ok ? "外部一键添加" : "外部添加失败";
+        if ("RESTORE_MERGE".equals(type)) return "合并恢复备份";
+        if ("RESTORE_REPLACE".equals(type)) return "完整替换恢复备份";
+        if ("RESTORE".equals(type)) return "从备份恢复失败";
+        if ("ROLLBACK".equals(type)) return ok ? "撤回并还原恢复前快照" : "回滚快照失败";
+        if ("DECRYPT".equals(type)) return "备份解密验证失败";
+        if ("ADD".equals(type)) return "新增收藏";
+        if ("EDIT".equals(type)) return "编辑收藏";
+        if ("DELETE".equals(type)) return "移入回收站";
+        if ("BATCH_DELETE".equals(type)) return "批量移入回收站";
+        if ("RESTORE_TRASH".equals(type)) return "从回收站恢复";
+        if ("PURGE".equals(type)) return "永久清理收藏";
+        if ("BATCH_MOVE".equals(type)) return "批量移动分类";
+        if ("BATCH_TAG".equals(type)) return "批量添加标签";
+        if ("CATEGORY_ADD".equals(type)) return "新建分类文件夹";
+        if ("CATEGORY_EDIT".equals(type)) return "修改分类设置";
+        if ("CATEGORY_MOVE".equals(type)) return "移动分类位置";
+        if ("CATEGORY_DELETE".equals(type)) return "删除分类";
+        if ("TAG_ADD".equals(type)) return "新建标签";
+        if ("TAG_RENAME".equals(type)) return "重命名/合并标签";
+        if ("TAG_DELETE".equals(type)) return "删除标签";
+        if ("TAG_CLEAN".equals(type)) return "清理空标签";
+        return type + (ok ? "" : " · " + result);
+    }
+
+    public static String lastAuditText(Context ctx) {
+        List<AuditItem> list = recentAudits(ctx, 1);
+        if (list.isEmpty()) return "暂无操作记录";
+        AuditItem item = list.get(0);
+        return item.title + " · " + item.time + "\n" + item.detail;
     }
 
     public static String dbSizeText(Context ctx) {

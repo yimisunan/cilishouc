@@ -1,10 +1,14 @@
 package com.magnetvault.app;
 
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
@@ -16,7 +20,7 @@ public class ImportActivity extends AppActivity {
     private Task task;
     private EditText input;
     private CategoryPicker.Card categoryCard;
-    private TextView hint, summary, selection;
+    private TextView hint, liveCount, summary, selection;
     private Button preview, commit, bulk;
     private ListView list;
     private DraftAdapter adapter;
@@ -83,6 +87,17 @@ public class ImportActivity extends AppActivity {
         if (!reading) loadCategories();
         if (retained && task.result != null) task.delivered = false;
         taskChanged();
+        if (!retained
+                && state == null
+                && getIntent().getBooleanExtra("autoPreview", false)
+                && !task.session.text.trim().isEmpty()) {
+            MAIN.post(
+                    () -> {
+                        if (!isFinishing() && !isDestroyed() && task.session.draft == null) {
+                            preview();
+                        }
+                    });
+        }
     }
 
     private void loadCategories() {
@@ -105,8 +120,26 @@ public class ImportActivity extends AppActivity {
                 "按层级浏览或搜索分类，未自带分类的链接将归入此处");
     }
 
+    private void switchToSingleEdit() {
+        if (recognizing || task.running || reading) return;
+        captureInput();
+        Intent i = new Intent(this, EditActivity.class);
+        i.putExtra(EXTRA_FADE, true);
+        if (task.session.categoryId != null) {
+            i.putExtra(EditActivity.EXTRA_DEFAULT_CATEGORY, task.session.categoryId);
+        }
+        String raw = task.session.text == null ? "" : task.session.text.trim();
+        if (!raw.isEmpty()) {
+            List<String> links = raw.length() <= 50000 ? MagnetParser.extractAll(raw) : Collections.emptyList();
+            i.putExtra("text", links.isEmpty() ? raw : links.get(0));
+        }
+        startActivity(i);
+        deleteSession();
+        finishQuietFade();
+    }
+
     private void render() {
-        input = null; categoryCard = null; hint = null; preview = null;
+        input = null; categoryCard = null; hint = null; liveCount = null; preview = null;
         summary = null; selection = null; commit = null; bulk = null; list = null; adapter = null;
         LinearLayout root = Design.column(this);
         root.setBackgroundColor(Design.color(this, R.color.c_bg));
@@ -117,10 +150,23 @@ public class ImportActivity extends AppActivity {
     }
 
     private void renderInput(LinearLayout root) {
+        LinearLayout segWrap = Design.column(this);
+        Design.pad(this, segWrap, 14, 2, 4);
+        segWrap.addView(
+                Design.segmented(
+                        this,
+                        new String[] {"批量 / 智能识别", "单条精细录入"},
+                        new int[] {R.drawable.ic_sparkle, R.drawable.ic_edit},
+                        0,
+                        idx -> {
+                            if (idx == 1) switchToSingleEdit();
+                        }));
+        root.addView(segWrap);
+
         LinearLayout box = Design.column(this);
-        Design.pad(this, box, 18, 8, 24);
+        Design.pad(this, box, 18, 10, 24);
         box.addView(Design.heading(this, "粘贴链接，先整理再保存"));
-        Design.gap(this, box, 8);
+        Design.gap(this, box, 6);
         box.addView(Design.text(this, "一条或多条都可以，自动识别磁力和 ED2K。预览后可分别设置分类和标签。", 14, R.color.c_text2));
         Design.label(this, box, "默认分类（已有分类信息的条目优先使用自己的分类）");
         categoryCard =
@@ -148,7 +194,7 @@ public class ImportActivity extends AppActivity {
         Design.gap(this, box, 18);
         LinearLayout inputHeader = Design.row(this);
         TextView inputLbl = Design.text(this, "待导入内容", 13, R.color.c_text2);
-        inputLbl.setTypeface(null, android.graphics.Typeface.BOLD);
+        inputLbl.setTypeface(null, Typeface.BOLD);
         inputHeader.addView(inputLbl, new LinearLayout.LayoutParams(0, -2, 1));
         inputHeader.addView(
                 Design.pill(
@@ -174,6 +220,27 @@ public class ImportActivity extends AppActivity {
         input.setMinLines(4); input.setMaxLines(10);
         input.setText(task.session.text);
         box.addView(input);
+
+        liveCount = Design.text(this, "", 12, R.color.c_accent);
+        liveCount.setTypeface(null, Typeface.BOLD);
+        liveCount.setBackgroundResource(R.drawable.bg_pill_on);
+        Design.pad(this, liveCount, 12, 6, 6);
+        LinearLayout.LayoutParams lcp = new LinearLayout.LayoutParams(-2, -2);
+        lcp.topMargin = Ui.dp(this, 8);
+        box.addView(liveCount, lcp);
+
+        input.addTextChangedListener(
+                new TextWatcher() {
+                    public void beforeTextChanged(CharSequence s, int a, int c, int f) {}
+
+                    public void onTextChanged(CharSequence s, int a, int b, int c) {}
+
+                    public void afterTextChanged(Editable s) {
+                        updateLiveCount(s == null ? "" : s.toString());
+                    }
+                });
+        updateLiveCount(task.session.text);
+
         Design.gap(this, box, 10);
         box.addView(Design.textAction(this, "带分类、标签的导入格式说明 ›", this::showFormat));
         hint = Design.text(this, "先预览，不会立即保存。重复链接会自动跳过。", 13, R.color.c_text2);
@@ -185,6 +252,32 @@ public class ImportActivity extends AppActivity {
         Design.pad(this, footer, 18, 8, 14);
         preview = Design.button(this, "预览导入", R.drawable.ic_import, true, this::preview);
         footer.addView(preview); root.addView(footer);
+    }
+
+    private void updateLiveCount(String raw) {
+        if (liveCount == null) return;
+        String trimmed = raw == null ? "" : raw.trim();
+        if (trimmed.isEmpty()) {
+            liveCount.setVisibility(View.GONE);
+            return;
+        }
+        liveCount.setVisibility(View.VISIBLE);
+        if (trimmed.length() > 50000) {
+            liveCount.setBackgroundResource(R.drawable.bg_pill_on);
+            liveCount.setTextColor(Design.color(this, R.color.c_accent));
+            liveCount.setText("已粘贴大段文本 · 点击「预览导入」快速识别");
+            return;
+        }
+        List<String> links = MagnetParser.extractAll(trimmed);
+        if (!links.isEmpty()) {
+            liveCount.setBackgroundResource(R.drawable.bg_pill_on);
+            liveCount.setTextColor(Design.color(this, R.color.c_accent));
+            liveCount.setText("已识别 " + links.size() + " 条链接，可点击下方预览整理");
+        } else {
+            liveCount.setBackgroundResource(R.drawable.bg_pill);
+            liveCount.setTextColor(Design.color(this, R.color.c_text2));
+            liveCount.setText("未检测到 magnet: 或 ed2k:// 链接");
+        }
     }
 
     private void preview() {
@@ -228,11 +321,12 @@ public class ImportActivity extends AppActivity {
         LinearLayout header = Design.column(this);
         Design.pad(this, header, 0, 4, 12);
         summary = Design.text(this, "", 15, R.color.c_text);
+        summary.setTypeface(null, Typeface.BOLD);
         summary.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         header.addView(summary);
-        Design.gap(this, header, 8);
-        header.addView(Design.text(this, "点标题可展开完整名称；点分类、标签可直接修改，勾选后可批量设置。", 14, R.color.c_text2));
-        Design.gap(this, header, 8);
+        Design.gap(this, header, 6);
+        header.addView(Design.text(this, "轻点卡片展开完整名称；点分类或标签直接调整，勾选后支持批量操作。", 13, R.color.c_text2));
+        Design.gap(this, header, 10);
         EditText search = Design.input(this, "搜索标题、标签或分类", false);
         search.setContentDescription("搜索待导入清单");
         search.setSaveEnabled(false);
@@ -244,16 +338,16 @@ public class ImportActivity extends AppActivity {
             for (ImportDraft.Row row : task.session.draft.rows) row.selected = false;
             refresh();
         }));
+        actions.addView(Design.textAction(this, "修改粘贴内容", this::returnToInput));
         header.addView(actions);
-        selection = Design.text(this, "", 14, R.color.c_text2);
+        selection = Design.text(this, "", 13, R.color.c_text2);
         header.addView(selection);
-        header.addView(Design.textAction(this, "返回修改粘贴内容", this::returnToInput));
         list.addHeaderView(header, null, false);
         adapter = new DraftAdapter();
         list.setAdapter(adapter);
         root.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
         LinearLayout footer = Design.column(this);
-        Design.pad(this, footer, 20, 8, 12);
+        Design.pad(this, footer, 18, 8, 14);
         bulk = Design.button(this, "设置所选…", R.drawable.ic_edit, false, this::batchMenu);
         footer.addView(bulk); Design.gap(this, footer, 8);
         commit = Design.button(this, "", R.drawable.ic_import, true, this::confirmImport);
@@ -373,22 +467,116 @@ public class ImportActivity extends AppActivity {
 
     private void editDetails(ImportDraft.Row row) {
         if (task.running || !row.editable()) return;
-        LinearLayout box = Design.column(this); Design.pad(this, box, 20, 8, 12);
-        Design.label(this, box, "标题");
-        EditText title = Design.input(this, "留空使用链接标题", false); title.setText(row.entry.title); box.addView(title);
-        Design.label(this, box, "来源");
-        EditText source = Design.input(this, "来源网址或说明", false); source.setText(row.entry.source); box.addView(source);
-        Design.label(this, box, "备注");
-        EditText note = Design.input(this, "备注", true); note.setText(row.entry.note); box.addView(note);
-        CheckBox include = new CheckBox(this); include.setText("导入这条收藏"); include.setMinHeight(Ui.dp(this, 48));
-        include.setChecked(row.included); include.setTextColor(Design.color(this, R.color.c_text)); box.addView(include);
-        new AlertDialog.Builder(this).setTitle("编辑待导入条目").setView(Design.scroll(this, box))
-                .setNegativeButton("取消", null).setPositiveButton("应用", (d, w) -> {
-                    row.entry.title = title.getText().toString().trim();
-                    row.entry.source = source.getText().toString().trim();
-                    row.entry.note = note.getText().toString().trim();
-                    row.included = include.isChecked(); changed();
-                }).show();
+        LinearLayout sheet = Ui.sheetContainer(this);
+
+        LinearLayout header = Design.row(this);
+        FrameLayout badge =
+                Design.iconBadge(
+                        this,
+                        R.drawable.ic_edit,
+                        Design.color(this, R.color.c_accent),
+                        Design.color(this, R.color.c_accent_soft),
+                        38,
+                        20);
+        LinearLayout.LayoutParams bp = (LinearLayout.LayoutParams) badge.getLayoutParams();
+        bp.rightMargin = Ui.dp(this, 12);
+        header.addView(badge, bp);
+        TextView head = Design.text(this, "编辑待导入条目", 18, R.color.c_text);
+        head.setTypeface(null, Typeface.BOLD);
+        header.addView(head, new LinearLayout.LayoutParams(0, -2, 1));
+        sheet.addView(header);
+
+        LinearLayout form = Design.column(this);
+        Design.label(this, form, "标题");
+        EditText title = Design.input(this, "留空使用链接标题", false);
+        title.setText(row.entry.title);
+        form.addView(title);
+
+        Design.label(this, form, "来源");
+        EditText source = Design.input(this, "来源网址或说明", false);
+        source.setText(row.entry.source);
+        form.addView(source);
+
+        Design.label(this, form, "备注");
+        EditText note = Design.input(this, "备注", true);
+        note.setText(row.entry.note);
+        form.addView(note);
+
+        Design.gap(this, form, 14);
+        final boolean[] includeState = {row.included};
+        LinearLayout toggleRow = Design.row(this);
+        toggleRow.setBackgroundResource(R.drawable.bg_card_soft);
+        toggleRow.setMinimumHeight(Ui.dp(this, 52));
+        Design.pad(this, toggleRow, 14, 10, 10);
+        toggleRow.setFocusable(true);
+        toggleRow.setClickable(true);
+        Design.tactile(toggleRow);
+
+        TextView incTxt = Design.text(this, "导入这条收藏", 14, R.color.c_text);
+        incTxt.setTypeface(null, Typeface.BOLD);
+        toggleRow.addView(incTxt, new LinearLayout.LayoutParams(0, -2, 1));
+
+        final FrameLayout badgeSlot = new FrameLayout(this);
+        toggleRow.addView(badgeSlot, new LinearLayout.LayoutParams(-2, -2));
+        Runnable syncInclude =
+                () -> {
+                    badgeSlot.removeAllViews();
+                    badgeSlot.addView(
+                            Design.toggleBadge(
+                                    this, includeState[0], "纳入导入", "暂不导入"));
+                };
+        syncInclude.run();
+        toggleRow.setOnClickListener(
+                v -> {
+                    includeState[0] = !includeState[0];
+                    syncInclude.run();
+                });
+        form.addView(toggleRow);
+
+        ScrollView sc = new ScrollView(this);
+        sc.setVerticalScrollBarEnabled(false);
+        sc.addView(form);
+        int maxH = getResources().getDisplayMetrics().heightPixels * 52 / 100;
+        sheet.addView(
+                sc,
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        Math.min(maxH, Ui.dp(this, 360))));
+
+        Design.gap(this, sheet, 14);
+        final Dialog[] ref = {null};
+        LinearLayout actions = Design.row(this);
+        Button cancel =
+                Design.button(
+                        this,
+                        "取消",
+                        0,
+                        false,
+                        () -> {
+                            if (ref[0] != null) ref[0].dismiss();
+                        });
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, -2, 1);
+        cp.rightMargin = Ui.dp(this, 10);
+        actions.addView(cancel, cp);
+
+        Button apply =
+                Design.button(
+                        this,
+                        "应用",
+                        R.drawable.ic_check,
+                        true,
+                        () -> {
+                            row.entry.title = title.getText().toString().trim();
+                            row.entry.source = source.getText().toString().trim();
+                            row.entry.note = note.getText().toString().trim();
+                            row.included = includeState[0];
+                            if (ref[0] != null) ref[0].dismiss();
+                            changed();
+                        });
+        actions.addView(apply, new LinearLayout.LayoutParams(0, -2, 1.3f));
+        sheet.addView(actions);
+
+        ref[0] = Ui.showSheet(this, sheet, true);
     }
 
     private void changed() { refresh(); saveSession(); }
@@ -407,8 +595,7 @@ public class ImportActivity extends AppActivity {
         if (!newPaths.isEmpty()) message += "\n\n将按路径创建缺少的分类（" + newPaths.size() + " 个目标路径）：\n"
                 + ImportTextParser.join(new ArrayList<>(newPaths).subList(0, Math.min(5, newPaths.size())), "\n")
                 + (newPaths.size() > 5 ? "\n…" : "");
-        new AlertDialog.Builder(this).setTitle("确认导入").setMessage(message)
-                .setNegativeButton("返回修改", null).setPositiveButton("开始导入", (d, w) -> start()).show();
+        Ui.confirmSheet(this, "确认导入收藏", message, "开始导入", false, this::start);
     }
 
     private void start() {
@@ -436,36 +623,103 @@ public class ImportActivity extends AppActivity {
         }
         if (task.result != null && !task.delivered) {
             task.delivered = true; deleteSession();
-            new AlertDialog.Builder(this).setTitle("导入完成").setMessage(task.result.describe())
-                    .setPositiveButton("返回收藏", (d, w) -> finish())
-                    .setNegativeButton("继续添加", (d, w) -> {
-                        Task next = new Task(); next.observer = this::taskChanged;
-                        task = next; discarded = false; stateKey = UUID.randomUUID().toString();
-                        expandedRows.clear();
-                        position = positionTop = 0; render(); loadCategories();
-                    }).setCancelable(false).show();
+            LinearLayout sheet = Ui.sheetContainer(this);
+            LinearLayout header = Design.row(this);
+            FrameLayout badge =
+                    Design.iconBadge(
+                            this,
+                            R.drawable.ic_shield_ok,
+                            Design.color(this, R.color.c_accent),
+                            Design.color(this, R.color.c_accent_soft),
+                            40,
+                            22);
+            LinearLayout.LayoutParams bp = (LinearLayout.LayoutParams) badge.getLayoutParams();
+            bp.rightMargin = Ui.dp(this, 12);
+            header.addView(badge, bp);
+            TextView head = Design.text(this, "导入完成", 18, R.color.c_text);
+            head.setTypeface(null, Typeface.BOLD);
+            header.addView(head, new LinearLayout.LayoutParams(0, -2, 1));
+            sheet.addView(header);
+
+            Design.gap(this, sheet, 12);
+            TextView body = Design.text(this, task.result.describe(), 14, R.color.c_text2);
+            body.setBackgroundResource(R.drawable.bg_card_soft);
+            Design.pad(this, body, 14, 12, 12);
+            sheet.addView(body);
+
+            Design.gap(this, sheet, 16);
+            final Dialog[] ref = {null};
+            LinearLayout actions = Design.row(this);
+            Button again =
+                    Design.button(
+                            this,
+                            "继续添加",
+                            R.drawable.ic_add,
+                            false,
+                            () -> {
+                                if (ref[0] != null) ref[0].dismiss();
+                                Task next = new Task();
+                                next.observer = this::taskChanged;
+                                task = next;
+                                discarded = false;
+                                stateKey = UUID.randomUUID().toString();
+                                expandedRows.clear();
+                                position = positionTop = 0;
+                                render();
+                                loadCategories();
+                            });
+            LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(0, -2, 1);
+            ap.rightMargin = Ui.dp(this, 10);
+            actions.addView(again, ap);
+
+            Button done =
+                    Design.button(
+                            this,
+                            "返回收藏",
+                            R.drawable.ic_check,
+                            true,
+                            () -> {
+                                if (ref[0] != null) ref[0].dismiss();
+                                finish();
+                            });
+            actions.addView(done, new LinearLayout.LayoutParams(0, -2, 1.3f));
+            sheet.addView(actions);
+
+            ref[0] = Ui.showSheet(this, sheet, false);
+            ref[0].setCancelable(false);
+            ref[0].setCanceledOnTouchOutside(false);
         } else if (task.error != null && !task.delivered) {
             task.delivered = true;
-            new AlertDialog.Builder(this).setTitle("导入未完成").setMessage(task.error)
-                    .setPositiveButton("返回清单", null).show();
+            Ui.infoSheet(this, "导入未完成", task.error, R.drawable.ic_info, true, "返回清单", null);
         }
     }
 
     private void returnToInput() {
         if (task.running) return;
-        new AlertDialog.Builder(this).setTitle("重新识别粘贴内容？")
-                .setMessage("清单中的分类、标签和标题修改将清除，原粘贴内容会保留。")
-                .setNegativeButton("继续整理", null).setPositiveButton("返回修改", (d, w) -> {
-                    task.session.draft = null; task.session.query = "";
+        Ui.confirmSheet(
+                this,
+                "重新识别粘贴内容？",
+                "清单中的分类、标签和标题修改将清除，原粘贴内容会保留。",
+                "返回修改",
+                false,
+                () -> {
+                    task.session.draft = null;
+                    task.session.query = "";
                     expandedRows.clear();
-                    render(); saveSession();
-                }).show();
+                    render();
+                    saveSession();
+                });
     }
 
     private void showFormat() {
-        new AlertDialog.Builder(this).setTitle("带分类、标签一起导入")
-                .setMessage("方式一：每条一个文本块，条目之间空一行。\n\n标题：示例视频\n链接：magnet:?xt=urn:btih:…\n分类：电影 / 科幻\n标签：高清，待看\n来源：https://example.com\n备注：可选\n\n方式二：从 Excel/WPS 复制表格，首行包含列名：标题、链接、分类、标签。还可带来源、备注，列顺序不限。单元格内不要换行。\n\n分类用 / 分层，标签用逗号或分号分隔。缺少的分类和标签在最终导入时创建。只有链接时，可在预览中搜索、勾选后分组设置。")
-                .setPositiveButton("知道了", null).show();
+        Ui.infoSheet(
+                this,
+                "带分类、标签一起导入",
+                "方式一：每条一个文本块，条目之间空一行。\n\n标题：示例视频\n链接：magnet:?xt=urn:btih:…\n分类：电影 / 科幻\n标签：高清，待看\n来源：https://example.com\n备注：可选\n\n方式二：从 Excel/WPS 复制表格，首行包含列名：标题、链接、分类、标签。还可带来源、备注，列顺序不限。单元格内不要换行。\n\n分类用 / 分层，标签用逗号或分号分隔。缺少的分类和标签在最终导入时创建。只有链接时，可在预览中搜索、勾选后分组设置。",
+                R.drawable.ic_sparkle,
+                false,
+                "知道了",
+                null);
     }
 
     private void captureInput() {
@@ -516,8 +770,16 @@ public class ImportActivity extends AppActivity {
         captureInput();
         if (task.result != null || task.session.text.trim().isEmpty()) { deleteSession(); finish(); return; }
         if (task.session.draft != null) { returnToInput(); return; }
-        new AlertDialog.Builder(this).setTitle("离开添加页面？").setMessage("本次粘贴内容尚未保存。")
-                .setNegativeButton("继续编辑", null).setPositiveButton("放弃并离开", (d, w) -> { deleteSession(); finish(); }).show();
+        Ui.confirmSheet(
+                this,
+                "离开添加页面？",
+                "本次粘贴内容尚未保存。",
+                "放弃并离开",
+                true,
+                () -> {
+                    deleteSession();
+                    finish();
+                });
     }
 
     private void setEnabled(View view, boolean enabled) {
@@ -530,7 +792,7 @@ public class ImportActivity extends AppActivity {
         TextView tv = Design.text(this, "", 11, R.color.c_chip_text);
         tv.setBackgroundResource(R.drawable.bg_tag_pill);
         tv.setSingleLine(true);
-        tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        tv.setEllipsize(TextUtils.TruncateAt.END);
         tv.setMaxWidth(Ui.dp(this, 120));
         Design.pad(this, tv, 6, 2, 2);
         tv.setVisibility(View.GONE);
@@ -568,8 +830,9 @@ public class ImportActivity extends AppActivity {
             if (recycled == null) {
                 h = new Holder();
                 LinearLayout card = Design.card(ImportActivity.this);
+                Design.tactile(card);
                 LinearLayout row = Design.row(ImportActivity.this);
-                row.setGravity(android.view.Gravity.TOP);
+                row.setGravity(Gravity.TOP);
 
                 h.check = new CheckBox(ImportActivity.this);
                 LinearLayout.LayoutParams ckp =
@@ -584,9 +847,9 @@ public class ImportActivity extends AppActivity {
                 h.focusRow = Design.row(ImportActivity.this);
                 h.focusRow.setVisibility(View.GONE);
                 h.code = Design.text(ImportActivity.this, "", 12, R.color.c_accent);
-                h.code.setTypeface(null, android.graphics.Typeface.BOLD);
+                h.code.setTypeface(null, Typeface.BOLD);
                 h.code.setSingleLine(true);
-                h.code.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                h.code.setEllipsize(TextUtils.TruncateAt.END);
                 Design.pad(ImportActivity.this, h.code, 7, 2, 2);
                 h.code.setVisibility(View.GONE);
                 LinearLayout.LayoutParams codeLp = new LinearLayout.LayoutParams(-2, -2);
@@ -606,7 +869,7 @@ public class ImportActivity extends AppActivity {
                 h.titleCol.addView(h.focusRow, frp);
 
                 h.title = Design.text(ImportActivity.this, "", 15, R.color.c_text);
-                h.title.setTypeface(null, android.graphics.Typeface.BOLD);
+                h.title.setTypeface(null, Typeface.BOLD);
                 h.titleCol.addView(h.title);
 
                 LinearLayout statusRow = Design.row(ImportActivity.this);
@@ -645,9 +908,9 @@ public class ImportActivity extends AppActivity {
 
                 LinearLayout actions = Design.row(ImportActivity.this);
                 h.folder = Design.button(ImportActivity.this, "", R.drawable.ic_folder, false, () -> {});
-                h.folder.setTextSize(13); h.folder.setSingleLine(true); h.folder.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);
+                h.folder.setTextSize(13); h.folder.setSingleLine(true); h.folder.setEllipsize(TextUtils.TruncateAt.MIDDLE);
                 h.tags = Design.button(ImportActivity.this, "", R.drawable.ic_tag, false, () -> {});
-                h.tags.setTextSize(13); h.tags.setSingleLine(true); h.tags.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                h.tags.setTextSize(13); h.tags.setSingleLine(true); h.tags.setEllipsize(TextUtils.TruncateAt.END);
                 LinearLayout.LayoutParams fp = new LinearLayout.LayoutParams(0, -2, 1); fp.rightMargin = Ui.dp(ImportActivity.this, 8);
                 actions.addView(h.folder, fp);
                 actions.addView(h.tags, new LinearLayout.LayoutParams(0, -2, 1));
@@ -661,6 +924,7 @@ public class ImportActivity extends AppActivity {
             } else h = (Holder) recycled.getTag();
             ImportDraft.Row item = visible.get(p); Entry e = item.entry;
             final View cardView = recycled;
+            final Holder holderRef = h;
             boolean ed2k = MagnetParser.isEd2k(e.magnet);
             boolean compact = ThemePrefs.isCompactList(ImportActivity.this);
             boolean rowExpanded = expandedRows.contains(item);
@@ -711,20 +975,29 @@ public class ImportActivity extends AppActivity {
                 h.title.setEllipsize(null);
             } else {
                 h.title.setMaxLines(2);
-                h.title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                h.title.setEllipsize(TextUtils.TruncateAt.END);
             }
 
-            if (rowExpanded && !android.text.TextUtils.isEmpty(e.note)) {
+            if (rowExpanded && !TextUtils.isEmpty(e.note)) {
                 h.note.setVisibility(View.VISIBLE);
                 h.note.setText("备注：" + e.note.trim());
             } else {
                 h.note.setVisibility(View.GONE);
             }
-            h.chev.setRotation(rowExpanded ? 180f : 0f);
+            if (h.boundItem == item) {
+                Design.rotateTo(h.chev, rowExpanded ? 180f : 0f);
+            } else {
+                h.chev.animate().cancel();
+                h.chev.setRotation(rowExpanded ? 180f : 0f);
+            }
+            h.boundItem = item;
 
             View.OnClickListener toggleRow =
                     v -> {
+                        boolean willExpand = !expandedRows.contains(item);
+                        Design.animate(list);
                         if (!expandedRows.remove(item)) expandedRows.add(item);
+                        Design.rotateTo(holderRef.chev, willExpand ? 180f : 0f);
                         notifyDataSetChanged();
                     };
             cardView.setOnClickListener(toggleRow);
@@ -756,5 +1029,6 @@ public class ImportActivity extends AppActivity {
         ImageView chev;
         Button folder, tags;
         ImageButton more;
+        ImportDraft.Row boundItem;
     }
 }

@@ -19,6 +19,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
             android:contentDescription="返回"
             android:focusable="true"
             android:padding="12dp"
@@ -43,19 +44,113 @@
         android:scrollbars="none">
 
         <LinearLayout
+            android:id="@+id/dav_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingBottom="28dp">
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_link"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent"
-                android:text="服务器地址"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="14dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginRight="14dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/guide_toggle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:minHeight="52dp"
+                    android:orientation="horizontal"
+                    android:paddingLeft="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingRight="14dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginRight="10dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_sparkle"
+                        android:tint="@color/c_accent" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="3 步获取坚果云应用密码"
+                        android:textColor="@color/c_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/guide_chev"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_down"
+                        android:tint="@color/c_text2" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/guide_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingLeft="14dp"
+                    android:paddingRight="14dp"
+                    android:paddingBottom="14dp"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="10dp"
+                        android:background="@color/c_divider" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:lineSpacingExtra="5dp"
+                        android:text="1. 打开坚果云网页版 → 点击右上角「账户信息」→「安全选项」\n2. 在「第三方应用管理」里点击「添加应用密码」，名称填 磁力收藏夹\n3. 将生成的应用密码填入下方密码框即可（请勿填写登录密码）"
+                        android:textColor="@color/c_text2"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_link"
+                    android:tint="@color/c_accent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="服务器地址"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/input_url"
@@ -63,14 +158,32 @@
                 android:hint="https://dav.jianguoyun.com/dav/"
                 android:inputType="textUri" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_user"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent2"
-                android:text="账号（邮箱）"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_user"
+                    android:tint="@color/c_accent2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="账号（邮箱）"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/input_user"
@@ -78,29 +191,98 @@
                 android:hint="you@example.com"
                 android:inputType="textEmailAddress" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_lock"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent"
-                android:text="应用密码（坚果云「安全选项 → 添加应用」生成）"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <EditText
-                android:id="@+id/input_pass"
-                style="@style/FieldInput"
-                android:hint="应用密码"
-                android:inputType="textPassword" />
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_lock"
+                    android:tint="@color/c_accent" />
 
-            <TextView
-                style="@style/FieldLabel"
-                android:drawableLeft="@drawable/ic_folder"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/c_accent2"
-                android:text="备份目录（不存在会自动创建）"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="应用密码"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/pass_box"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="14dp"
+                android:layout_marginRight="14dp"
+                android:background="@drawable/bg_input_box"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingRight="6dp">
+
+                <EditText
+                    android:id="@+id/input_pass"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:hint="填入坚果云应用密码"
+                    android:inputType="textPassword"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:singleLine="true"
+                    android:textColor="@color/c_text"
+                    android:textColorHint="@color/c_text2"
+                    android:textSize="15sp" />
+
+                <ImageButton
+                    android:id="@+id/btn_toggle_pass"
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:background="@drawable/bg_flat"
+                    android:contentDescription="显示密码"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_eye"
+                    android:tint="@color/c_text2" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginRight="18dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:layout_marginRight="6dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_folder"
+                    android:tint="@color/c_accent2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="备份目录（不存在会自动创建）"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/input_dir"
@@ -109,7 +291,7 @@
                 android:inputType="text"
                 android:maxLines="1" />
 
-            <TextView
+            <LinearLayout
                 android:id="@+id/btn_test"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
@@ -117,18 +299,30 @@
                 android:layout_marginTop="20dp"
                 android:layout_marginRight="14dp"
                 android:background="@drawable/bg_fab"
-                android:drawableLeft="@drawable/ic_cloud"
-                android:drawablePadding="8dp"
-                android:drawableTint="@color/c_on_accent"
+                android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
                 android:minHeight="48dp"
+                android:orientation="horizontal"
                 android:paddingLeft="20dp"
-                android:paddingRight="20dp"
-                android:text="保存并测试连接"
-                android:textColor="@color/c_on_accent"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:paddingRight="20dp">
+
+                <ImageView
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
+                    android:layout_marginRight="8dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_cloud"
+                    android:tint="@color/c_on_accent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="保存并测试连接"
+                    android:textColor="@color/c_on_accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tv_result"
@@ -138,16 +332,37 @@
                 android:textColor="@color/c_text"
                 android:textSize="13sp" />
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="18dp"
-                android:layout_marginTop="14dp"
-                android:layout_marginRight="18dp"
-                android:lineSpacingExtra="5dp"
-                android:text="测试流程：① PROPFIND 根目录（验证账号密码）→ ② MKCOL 备份目录（不存在则创建）→ ③ 上传 32 字节探测文件 → ④ PROPFIND 校验大小 → ⑤ 删除探测文件。"
-                android:textColor="@color/c_text2"
-                android:textSize="12sp" />
+                android:layout_marginLeft="14dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginRight="14dp"
+                android:background="@drawable/bg_card_soft"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingLeft="14dp"
+                android:paddingTop="12dp"
+                android:paddingRight="14dp"
+                android:paddingBottom="12dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_marginRight="10dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_shield_ok"
+                    android:tint="@color/c_accent" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:lineSpacingExtra="4dp"
+                    android:text="点击保存并测试后，应用会核验账号授权、自动建立备份目录，并写入后清理一份临时测试数据以确认读写可靠。"
+                    android:textColor="@color/c_text2"
+                    android:textSize="12sp" />
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

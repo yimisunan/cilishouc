@@ -1,21 +1,24 @@
 package com.magnetvault.app;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.text.InputType;
-import android.widget.EditText;
+import android.app.Dialog;
+import android.graphics.Typeface;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
- * 解密 + 恢复的完整交互流程（云端下载的和本地文件选中的都走这里）： 读 header → 取密码 → 解密 → 摘要确认 →（合并 | 完整替换）→ 快照 → 恢复 → 结果统计。
- * 另外提供「回滚到最近快照」。
+ * 备份解密与恢复交互流（云端下载与本地 .mjbf 均共用）：
+ * 读容器头 → 获取密码 → 后台解密 → 摘要对比（合并 / 完整替换）→ 自动快照 → 恢复 → 结果汇报。
  */
 public final class RestoreFlow {
 
-    private static final String PWD_KEY = "backupPwd";
+    private static final String PWD_KEY = CloudBackup.PWD_KEY;
 
     private RestoreFlow() {}
 
@@ -23,92 +26,109 @@ public final class RestoreFlow {
         void onDone();
     }
 
-    // ==================== 入口：一个加密容器 ====================
+    // ==================== 入口：解析加密容器头 ====================
 
     public static void start(final Activity host, final byte[] container, final Done done) {
         BackupCrypto.Result header = BackupCrypto.readHeader(container);
         if (header.error != BackupCrypto.Error.NONE) {
-            alert(host, "无法读取备份", header.message, done);
+            alert(host, "无法读取备份", header.message, true, done);
             return;
         }
         String info =
                 "备份时间："
                         + Ui.time(header.createdAt)
-                        + "\n应用版本："
-                        + header.appVersion
                         + "\n文件大小："
-                        + container.length
-                        + " 字节";
+                        + Ui.sizeText(container.length)
+                        + (header.appVersion == null || header.appVersion.isEmpty()
+                                ? ""
+                                : "\n应用版本：" + header.appVersion);
 
         askPassword(
                 host,
-                "解密备份",
+                "输入密码解密备份",
                 info,
-                new PasswordCallback() {
-                    @Override
-                    public void onPassword(char[] password) {
-                        decryptAndConfirm(host, container, password, done);
-                    }
-                });
+                true,
+                (password, fromRemembered) ->
+                        decryptAndConfirm(host, container, info, password, fromRemembered, done));
     }
 
     // ==================== 解密 ====================
 
     private static void decryptAndConfirm(
-            final Activity host, final byte[] container, final char[] password, final Done done) {
-        final AlertDialog busy = busy(host, "正在解密…");
+            final Activity host,
+            final byte[] container,
+            final String info,
+            final char[] password,
+            final boolean fromRemembered,
+            final Done done) {
+        final Dialog busy = Ui.busyDialog(host, "正在安全解密备份…");
         new Thread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                final BackupCrypto.Result result =
-                                        BackupCrypto.decrypt(password, container);
-                                host.runOnUiThread(
-                                        new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                dismiss(busy);
-                                                if (host.isFinishing() || host.isDestroyed())
-                                                    return;
-                                                if (result.error != BackupCrypto.Error.NONE) {
-                                                    Repo.addAudit(
-                                                            host,
-                                                            "DECRYPT",
-                                                            result.error.name(),
-                                                            result.message,
-                                                            0);
-                                                    alert(host, "解密失败", result.message, done);
-                                                    return;
-                                                }
-                                                String json =
-                                                        new String(
-                                                                result.payload,
-                                                                StandardCharsets.UTF_8);
-                                                try {
-                                                    BackupManager.Summary s =
-                                                            BackupManager.summarize(json);
-                                                    chooseMode(host, json, password, s, done);
-                                                } catch (Exception e) {
-                                                    Repo.addAudit(
-                                                            host,
-                                                            "DECRYPT",
-                                                            "FAILED",
-                                                            "payload 不是合法 JSON",
-                                                            0);
-                                                    alert(
-                                                            host,
-                                                            "解密失败",
-                                                            "备份内容不是有效 JSON，可能已损坏。",
-                                                            done);
-                                                }
+                        () -> {
+                            final BackupCrypto.Result result =
+                                    BackupCrypto.decrypt(password, container);
+                            host.runOnUiThread(
+                                    () -> {
+                                        Ui.dismissDialog(busy);
+                                        if (host.isFinishing() || host.isDestroyed()) {
+                                            Arrays.fill(password, '\0');
+                                            return;
+                                        }
+                                        if (result.error != BackupCrypto.Error.NONE) {
+                                            Arrays.fill(password, '\0');
+                                            if (fromRemembered
+                                                    && result.error
+                                                            == BackupCrypto.Error.WRONG_PASSWORD) {
+                                                askPassword(
+                                                        host,
+                                                        "输入该备份的加密密码",
+                                                        "本机记住的密码无法解开此备份，请输入当时加密使用的密码。\n\n"
+                                                                + info,
+                                                        false,
+                                                        (manualPwd, r2) ->
+                                                                decryptAndConfirm(
+                                                                        host,
+                                                                        container,
+                                                                        info,
+                                                                        manualPwd,
+                                                                        false,
+                                                                        done));
+                                                return;
                                             }
-                                        });
-                            }
+                                            Repo.addAudit(
+                                                    host,
+                                                    "DECRYPT",
+                                                    result.error.name(),
+                                                    result.message,
+                                                    0);
+                                            alert(host, "解密失败", result.message, true, done);
+                                            return;
+                                        }
+                                        String json =
+                                                new String(result.payload, StandardCharsets.UTF_8);
+                                        try {
+                                            BackupManager.Summary s = BackupManager.summarize(json);
+                                            chooseMode(host, json, password, s, done);
+                                        } catch (Exception e) {
+                                            Arrays.fill(password, '\0');
+                                            Repo.addAudit(
+                                                    host,
+                                                    "DECRYPT",
+                                                    "FAILED",
+                                                    "payload 不是合法 JSON",
+                                                    0);
+                                            alert(
+                                                    host,
+                                                    "解密失败",
+                                                    "备份内容已损坏或格式无效。",
+                                                    true,
+                                                    done);
+                                        }
+                                    });
                         })
                 .start();
     }
 
-    // ==================== 摘要 + 选择恢复方式 ====================
+    // ==================== 摘要对比与选择恢复方式 ====================
 
     private static void chooseMode(
             final Activity host,
@@ -116,54 +136,185 @@ public final class RestoreFlow {
             final char[] password,
             BackupManager.Summary summary,
             final Done done) {
-        new AlertDialog.Builder(host)
-                .setTitle("确认恢复")
-                .setMessage(
-                        summary.describe()
-                                + "\n\n当前本地："
-                                + Repo.countActive(host)
-                                + " 条（回收站 "
-                                + Repo.countTrash(host)
-                                + " 条）"
-                                + "\n\n两种方式的区别：\n"
-                                + "· 合并：备份中更新的条目覆盖本地，本地更新的保留，不会删东西\n"
-                                + "· 完整替换：清空本地全部条目后按备份重建（分类与标签字典保留）")
-                .setPositiveButton(
-                        "合并到现有数据",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface d, int which) {
-                                doRestore(host, json, password, false, done);
-                            }
-                        })
-                .setNeutralButton(
-                        "完整替换",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface d, int which) {
-                                confirmReplace(host, json, password, done);
-                            }
-                        })
-                .setNegativeButton("取消", null)
-                .show();
+        LinearLayout root = Ui.sheetContainer(host);
+
+        LinearLayout header = Design.row(host);
+        FrameLayout badge =
+                Design.iconBadge(
+                        host,
+                        R.drawable.ic_restore,
+                        Design.color(host, R.color.c_accent),
+                        Design.color(host, R.color.c_accent_soft),
+                        38,
+                        20);
+        LinearLayout.LayoutParams bp = (LinearLayout.LayoutParams) badge.getLayoutParams();
+        bp.rightMargin = Ui.dp(host, 12);
+        header.addView(badge, bp);
+        LinearLayout headCopy = Design.column(host);
+        TextView head = Design.text(host, "选择恢复方式", 18, R.color.c_text);
+        head.setTypeface(null, Typeface.BOLD);
+        headCopy.addView(head);
+        Design.gap(host, headCopy, 2);
+        headCopy.addView(
+                Design.text(host, "导出于 " + Ui.time(summary.exportedAt), 12, R.color.c_text2));
+        header.addView(headCopy, new LinearLayout.LayoutParams(0, -2, 1));
+        root.addView(header);
+
+        Design.gap(host, root, 12);
+
+        // Backup vs Local count summary card
+        LinearLayout comp = Design.row(host);
+        comp.setBackgroundResource(R.drawable.bg_card_soft);
+        Design.pad(host, comp, 12, 10, 10);
+
+        LinearLayout left = Design.column(host);
+        left.addView(Design.text(host, "备份内容", 11, R.color.c_text2));
+        Design.gap(host, left, 3);
+        TextView bStat =
+                Design.text(
+                        host,
+                        summary.entries + " 条 · " + summary.categories + " 分类",
+                        14,
+                        R.color.c_accent);
+        bStat.setTypeface(null, Typeface.BOLD);
+        left.addView(bStat);
+        left.addView(
+                Design.text(
+                        host,
+                        summary.tags + " 标签 · 回收站 " + summary.trashed + " 条",
+                        11,
+                        R.color.c_text2));
+        comp.addView(left, new LinearLayout.LayoutParams(0, -2, 1));
+
+        LinearLayout right = Design.column(host);
+        right.addView(Design.text(host, "本机当前", 11, R.color.c_text2));
+        Design.gap(host, right, 3);
+        TextView lStat =
+                Design.text(
+                        host,
+                        Repo.countActive(host) + " 条收藏",
+                        14,
+                        R.color.c_text);
+        lStat.setTypeface(null, Typeface.BOLD);
+        right.addView(lStat);
+        right.addView(
+                Design.text(host, "回收站 " + Repo.countTrash(host) + " 条", 11, R.color.c_text2));
+        comp.addView(right, new LinearLayout.LayoutParams(0, -2, 1));
+        root.addView(comp);
+
+        Design.gap(host, root, 12);
+
+        final Dialog[] ref = {null};
+        final boolean[] handedOff = {false};
+
+        // Option 1: Merge (recommended)
+        LinearLayout mergeCard = Design.row(host);
+        mergeCard.setBackgroundResource(R.drawable.bg_card_selected);
+        Design.pad(host, mergeCard, 12, 12, 12);
+        mergeCard.setFocusable(true);
+        mergeCard.setClickable(true);
+        Design.tactile(mergeCard);
+        FrameLayout mb =
+                Design.iconBadge(
+                        host,
+                        R.drawable.ic_sparkle,
+                        Design.color(host, R.color.c_accent),
+                        Design.color(host, R.color.c_accent_soft),
+                        36,
+                        18);
+        LinearLayout.LayoutParams mbp = (LinearLayout.LayoutParams) mb.getLayoutParams();
+        mbp.rightMargin = Ui.dp(host, 12);
+        mergeCard.addView(mb, mbp);
+        LinearLayout mc = Design.column(host);
+        TextView mt = Design.text(host, "合并到现有数据（推荐）", 15, R.color.c_accent);
+        mt.setTypeface(null, Typeface.BOLD);
+        mc.addView(mt);
+        Design.gap(host, mc, 3);
+        mc.addView(
+                Design.text(
+                        host,
+                        "备份较新的条目更新本机，本机更新的条目保留，不丢失任何内容",
+                        12,
+                        R.color.c_text2));
+        mergeCard.addView(mc, new LinearLayout.LayoutParams(0, -2, 1));
+        mergeCard.setOnClickListener(
+                v -> {
+                    handedOff[0] = true;
+                    if (ref[0] != null) ref[0].dismiss();
+                    doRestore(host, json, password, false, done);
+                });
+        root.addView(mergeCard);
+
+        Design.gap(host, root, 8);
+
+        // Option 2: Replace
+        LinearLayout replaceCard = Design.row(host);
+        replaceCard.setBackgroundResource(R.drawable.bg_card_soft);
+        Design.pad(host, replaceCard, 12, 12, 12);
+        replaceCard.setFocusable(true);
+        replaceCard.setClickable(true);
+        Design.tactile(replaceCard);
+        FrameLayout rb =
+                Design.iconBadge(
+                        host,
+                        R.drawable.ic_trash,
+                        Design.color(host, R.color.c_danger),
+                        Design.color(host, R.color.c_danger_soft),
+                        36,
+                        18);
+        LinearLayout.LayoutParams rbp = (LinearLayout.LayoutParams) rb.getLayoutParams();
+        rbp.rightMargin = Ui.dp(host, 12);
+        replaceCard.addView(rb, rbp);
+        LinearLayout rc = Design.column(host);
+        TextView rt = Design.text(host, "完整替换本机条目", 15, R.color.c_text);
+        rt.setTypeface(null, Typeface.BOLD);
+        rc.addView(rt);
+        Design.gap(host, rc, 3);
+        rc.addView(
+                Design.text(
+                        host,
+                        "清空本机条目后按这份备份重建（分类与标签字典保留，操作前会自动留快照）",
+                        12,
+                        R.color.c_text2));
+        replaceCard.addView(rc, new LinearLayout.LayoutParams(0, -2, 1));
+        replaceCard.setOnClickListener(
+                v -> {
+                    handedOff[0] = true;
+                    if (ref[0] != null) ref[0].dismiss();
+                    confirmReplace(host, json, password, done);
+                });
+        root.addView(replaceCard);
+
+        Design.gap(host, root, 14);
+        Button cancel =
+                Design.button(
+                        host,
+                        "取消",
+                        0,
+                        false,
+                        () -> {
+                            if (ref[0] != null) ref[0].cancel();
+                        });
+        root.addView(cancel, new LinearLayout.LayoutParams(-1, -2));
+
+        ref[0] = Ui.showSheet(host, root, false);
+        ref[0].setOnDismissListener(
+                d -> {
+                    if (!handedOff[0]) Arrays.fill(password, '\0');
+                });
     }
 
     private static void confirmReplace(
             final Activity host, final String json, final char[] password, final Done done) {
-        new AlertDialog.Builder(host)
-                .setTitle("确认完整替换？")
-                .setMessage(
-                        "将删除本机全部收藏条目（分类与标签字典保留），再用备份重建。\n\n" + "恢复前会自动写一份加密快照，失败或后悔时可从「回滚到最近快照」还原。")
-                .setPositiveButton(
-                        "替换",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface d, int which) {
-                                doRestore(host, json, password, true, done);
-                            }
-                        })
-                .setNegativeButton("取消", null)
-                .show();
+        Dialog d =
+                Ui.confirmSheet(
+                        host,
+                        "确认完整替换？",
+                        "将删除本机全部收藏条目（分类与标签字典保留），再用此备份完整重建。\n\n恢复前会自动保存一份本机加密快照，后悔时可从备份中心「撤销最近一次恢复」还原。",
+                        "确认替换",
+                        true,
+                        () -> doRestore(host, json, password, true, done));
+        d.setOnCancelListener(dlg -> Arrays.fill(password, '\0'));
     }
 
     // ==================== 执行恢复 ====================
@@ -174,86 +325,64 @@ public final class RestoreFlow {
             final char[] password,
             final boolean replace,
             final Done done) {
-        final AlertDialog busy = busy(host, replace ? "正在替换…" : "正在合并…");
+        final Dialog busy = Ui.busyDialog(host, replace ? "正在快照并替换恢复…" : "正在合并恢复收藏…");
         new Thread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                String error = null;
-                                BackupManager.RestoreResult rr = null;
-                                File snapshot = null;
-                                try {
-                                    snapshot = BackupManager.saveSnapshot(host, password);
-                                    rr = BackupManager.restore(host, json, replace);
-                                } catch (Exception e) {
-                                    error =
-                                            e.getClass().getSimpleName()
-                                                    + (e.getMessage() == null
-                                                            ? ""
-                                                            : "：" + e.getMessage());
-                                }
-                                final String err = error;
-                                final BackupManager.RestoreResult result = rr;
-                                final File snap = snapshot;
-
-                                host.runOnUiThread(
-                                        new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                dismiss(busy);
-                                                if (host.isFinishing() || host.isDestroyed())
-                                                    return;
-                                                if (err != null) {
-                                                    Repo.addAudit(
-                                                            host, "RESTORE", "FAILED", err, 0);
-                                                    alert(
-                                                            host,
-                                                            "恢复失败",
-                                                            "本次数据库操作已撤销，本机收藏已保留。\n\n错误："
-                                                                    + err
-                                                                    + (snap == null
-                                                                            ? ""
-                                                                            : "\n\n恢复前快照已写入：\n"
-                                                                                    + snap.getName()
-                                                                                    + "\n"
-                                                                                    + "可用「回滚到最近快照」还原。"),
-                                                            done);
-                                                    return;
-                                                }
-                                                Repo.addAudit(
-                                                        host,
-                                                        replace
-                                                                ? "RESTORE_REPLACE"
-                                                                : "RESTORE_MERGE",
-                                                        "SUCCESS",
-                                                        "",
-                                                        result.added + result.updated);
-                                                new AlertDialog.Builder(host)
-                                                        .setTitle("恢复完成")
-                                                        .setMessage(
-                                                                result.describe()
-                                                                        + "\n\n当前本地："
-                                                                        + Repo.countActive(host)
-                                                                        + " 条（回收站 "
-                                                                        + Repo.countTrash(host)
-                                                                        + " 条）")
-                                                        .setPositiveButton(
-                                                                "知道了",
-                                                                new DialogInterface
-                                                                        .OnClickListener() {
-                                                                    @Override
-                                                                    public void onClick(
-                                                                            DialogInterface d,
-                                                                            int which) {
-                                                                        if (done != null) {
-                                                                            done.onDone();
-                                                                        }
-                                                                    }
-                                                                })
-                                                        .show();
-                                            }
-                                        });
+                        () -> {
+                            String error = null;
+                            BackupManager.RestoreResult rr = null;
+                            File snapshot = null;
+                            try {
+                                snapshot = BackupManager.saveSnapshot(host, password);
+                                rr = BackupManager.restore(host, json, replace);
+                            } catch (Exception e) {
+                                error =
+                                        e.getClass().getSimpleName()
+                                                + (e.getMessage() == null
+                                                        ? ""
+                                                        : "：" + e.getMessage());
+                            } finally {
+                                Arrays.fill(password, '\0');
                             }
+                            final String err = error;
+                            final BackupManager.RestoreResult result = rr;
+                            final File snap = snapshot;
+
+                            host.runOnUiThread(
+                                    () -> {
+                                        Ui.dismissDialog(busy);
+                                        if (host.isFinishing() || host.isDestroyed()) return;
+                                        if (err != null) {
+                                            Repo.addAudit(host, "RESTORE", "FAILED", err, 0);
+                                            alert(
+                                                    host,
+                                                    "恢复失败",
+                                                    "本次数据库操作已撤销，本机收藏未受影响。\n\n错误："
+                                                            + err
+                                                            + (snap == null
+                                                                    ? ""
+                                                                    : "\n\n恢复前快照已保存，可通过「撤销最近一次恢复」还原。"),
+                                                    true,
+                                                    done);
+                                            return;
+                                        }
+                                        Repo.addAudit(
+                                                host,
+                                                replace ? "RESTORE_REPLACE" : "RESTORE_MERGE",
+                                                "SUCCESS",
+                                                "",
+                                                result.added + result.updated);
+                                        alert(
+                                                host,
+                                                "恢复完成",
+                                                result.describe()
+                                                        + "\n\n当前本机共有 "
+                                                        + Repo.countActive(host)
+                                                        + " 条收藏（回收站 "
+                                                        + Repo.countTrash(host)
+                                                        + " 条）",
+                                                false,
+                                                done);
+                                    });
                         })
                 .start();
     }
@@ -263,95 +392,99 @@ public final class RestoreFlow {
     public static void rollbackLatestSnapshot(final Activity host, final Done done) {
         final File snap = BackupManager.latestSnapshot(host);
         if (snap == null) {
-            alert(host, "没有快照", "本机还没有任何恢复前快照。", done);
+            alert(host, "还没有可撤销的快照", "每次执行备份恢复前，应用都会自动为您留一份安全快照。", false, done);
             return;
         }
+        final String info =
+                "快照时间：" + Ui.time(snap.lastModified()) + "\n将还原到此时间点前的完整本地数据。";
         askPassword(
                 host,
-                "回滚到恢复前快照",
-                "快照文件：" + snap.getName() + "\n时间：" + Ui.time(snap.lastModified()),
-                new PasswordCallback() {
-                    @Override
-                    public void onPassword(char[] password) {
-                        doRollback(host, snap, password, done);
-                    }
-                });
+                "撤销最近一次恢复",
+                info,
+                true,
+                (password, fromRemembered) ->
+                        doRollback(host, snap, info, password, fromRemembered, done));
     }
 
     private static void doRollback(
-            final Activity host, final File snap, final char[] password, final Done done) {
-        final AlertDialog busy = busy(host, "正在回滚…");
+            final Activity host,
+            final File snap,
+            final String info,
+            final char[] password,
+            final boolean fromRemembered,
+            final Done done) {
+        final Dialog busy = Ui.busyDialog(host, "正在还原恢复前快照…");
         new Thread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                String error = null;
-                                BackupManager.RestoreResult rr = null;
-                                try {
-                                    byte[] data;
-                                    try (java.io.InputStream in =
-                                            new java.io.FileInputStream(snap)) {
-                                        data = BackupManager.readAll(in);
-                                    }
-                                    BackupCrypto.Result r = BackupCrypto.decrypt(password, data);
-                                    if (r.error != BackupCrypto.Error.NONE) {
-                                        throw new IllegalStateException(r.message);
-                                    }
-                                    String json = new String(r.payload, StandardCharsets.UTF_8);
-                                    rr = BackupManager.restore(host, json, true);
-                                } catch (Exception e) {
-                                    error =
-                                            e.getMessage() == null
-                                                    ? e.getClass().getSimpleName()
-                                                    : e.getMessage();
+                        () -> {
+                            String error = null;
+                            boolean wrongPassword = false;
+                            BackupManager.RestoreResult rr = null;
+                            try {
+                                byte[] data;
+                                try (java.io.InputStream in = new java.io.FileInputStream(snap)) {
+                                    data = BackupManager.readAll(in);
                                 }
-                                final String err = error;
-                                final BackupManager.RestoreResult result = rr;
-                                host.runOnUiThread(
-                                        new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                dismiss(busy);
-                                                if (host.isFinishing() || host.isDestroyed())
-                                                    return;
-                                                if (err != null) {
-                                                    Repo.addAudit(
-                                                            host, "ROLLBACK", "FAILED", err, 0);
-                                                    alert(host, "回滚失败", err, done);
-                                                    return;
-                                                }
-                                                Repo.addAudit(
-                                                        host,
-                                                        "ROLLBACK",
-                                                        "SUCCESS",
-                                                        snap.getName(),
-                                                        result.added);
-                                                new AlertDialog.Builder(host)
-                                                        .setTitle("回滚完成")
-                                                        .setMessage(
-                                                                "已用快照重建："
-                                                                        + result.added
-                                                                        + " 条"
-                                                                        + "\n\n当前本地："
-                                                                        + Repo.countActive(host)
-                                                                        + " 条")
-                                                        .setPositiveButton(
-                                                                "知道了",
-                                                                new DialogInterface
-                                                                        .OnClickListener() {
-                                                                    @Override
-                                                                    public void onClick(
-                                                                            DialogInterface d,
-                                                                            int which) {
-                                                                        if (done != null) {
-                                                                            done.onDone();
-                                                                        }
-                                                                    }
-                                                                })
-                                                        .show();
-                                            }
-                                        });
+                                BackupCrypto.Result r = BackupCrypto.decrypt(password, data);
+                                if (r.error != BackupCrypto.Error.NONE) {
+                                    wrongPassword = r.error == BackupCrypto.Error.WRONG_PASSWORD;
+                                    throw new IllegalStateException(r.message);
+                                }
+                                String json = new String(r.payload, StandardCharsets.UTF_8);
+                                rr = BackupManager.restore(host, json, true);
+                            } catch (Exception e) {
+                                error =
+                                        e.getMessage() == null
+                                                ? e.getClass().getSimpleName()
+                                                : e.getMessage();
+                            } finally {
+                                Arrays.fill(password, '\0');
                             }
+                            final String err = error;
+                            final boolean retryManual = fromRemembered && wrongPassword;
+                            final BackupManager.RestoreResult result = rr;
+                            host.runOnUiThread(
+                                    () -> {
+                                        Ui.dismissDialog(busy);
+                                        if (host.isFinishing() || host.isDestroyed()) return;
+                                        if (retryManual) {
+                                            askPassword(
+                                                    host,
+                                                    "输入快照的加密密码",
+                                                    "本机记住的密码无法解开此快照，请输入当时恢复备份使用的密码。\n\n"
+                                                            + info,
+                                                    false,
+                                                    (manualPwd, r2) ->
+                                                            doRollback(
+                                                                    host,
+                                                                    snap,
+                                                                    info,
+                                                                    manualPwd,
+                                                                    false,
+                                                                    done));
+                                            return;
+                                        }
+                                        if (err != null) {
+                                            Repo.addAudit(host, "ROLLBACK", "FAILED", err, 0);
+                                            alert(host, "撤回失败", err, true, done);
+                                            return;
+                                        }
+                                        Repo.addAudit(
+                                                host,
+                                                "ROLLBACK",
+                                                "SUCCESS",
+                                                snap.getName(),
+                                                result.added);
+                                        alert(
+                                                host,
+                                                "已撤销并还原快照",
+                                                "已还原 "
+                                                        + result.added
+                                                        + " 条记录\n\n当前本机共有 "
+                                                        + Repo.countActive(host)
+                                                        + " 条收藏",
+                                                false,
+                                                done);
+                                    });
                         })
                 .start();
     }
@@ -359,84 +492,45 @@ public final class RestoreFlow {
     // ==================== 密码输入 ====================
 
     private interface PasswordCallback {
-        void onPassword(char[] password);
+        void onPassword(char[] password, boolean fromRemembered);
     }
 
     private static void askPassword(
-            final Activity host, final String title, final String info, final PasswordCallback cb) {
-        String remembered = SecretStore.get(host, PWD_KEY);
-        if (remembered != null && remembered.length() > 0) {
-            cb.onPassword(remembered.toCharArray());
-            return;
-        }
-        final EditText input = new EditText(host);
-        input.setHint("备份密码");
-        input.setSingleLine(true);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-
-        AlertDialog dialog =
-                new AlertDialog.Builder(host)
-                        .setTitle(title)
-                        .setMessage(info)
-                        .setView(input)
-                        .setPositiveButton("解密", null)
-                        .setNegativeButton("取消", null)
-                        .create();
-        dialog.setOnShowListener(
-                d ->
-                        dialog.getButton(-1)
-                                .setOnClickListener(
-                                        v -> {
-                                            String value = input.getText().toString();
-                                            if (value.isEmpty()) {
-                                                input.setError("请输入备份密码");
-                                                return;
-                                            }
-                                            dialog.dismiss();
-                                            cb.onPassword(value.toCharArray());
-                                        }));
-        dialog.show();
-    }
-
-    // ==================== 小工具 ====================
-
-    private static AlertDialog busy(Activity host, String msg) {
-        int orientation = host.getRequestedOrientation();
-        host.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-        AlertDialog d = new AlertDialog.Builder(host).setMessage(msg).setCancelable(false).create();
-        d.setOnDismissListener(
-                v -> {
-                    if (!host.isFinishing() && !host.isDestroyed())
-                        host.setRequestedOrientation(orientation);
-                });
-        d.show();
-        return d;
-    }
-
-    private static void dismiss(AlertDialog d) {
-        if (d != null) {
-            try {
-                d.dismiss();
-            } catch (Exception ignored) {
+            final Activity host,
+            final String title,
+            final String info,
+            boolean allowRemembered,
+            final PasswordCallback cb) {
+        if (allowRemembered) {
+            String remembered = SecretStore.get(host, PWD_KEY);
+            if (remembered != null && remembered.length() > 0) {
+                cb.onPassword(remembered.toCharArray(), true);
+                return;
             }
         }
+        Ui.passwordSheet(
+                host,
+                title,
+                info,
+                "输入备份密码",
+                false,
+                false,
+                "解密并继续",
+                null,
+                null,
+                pwd -> cb.onPassword(pwd, false));
     }
 
-    private static void alert(final Activity host, String title, String msg, final Done done) {
+    private static void alert(
+            final Activity host, String title, String msg, boolean warn, final Done done) {
         if (host.isFinishing() || host.isDestroyed()) return;
-        new AlertDialog.Builder(host)
-                .setTitle(title)
-                .setMessage(msg)
-                .setPositiveButton(
-                        "知道了",
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface d, int which) {
-                                if (done != null) {
-                                    done.onDone();
-                                }
-                            }
-                        })
-                .show();
+        Ui.infoSheet(
+                host,
+                title,
+                msg,
+                warn ? R.drawable.ic_info : R.drawable.ic_shield_ok,
+                warn,
+                "知道了",
+                done == null ? null : done::onDone);
     }
 }

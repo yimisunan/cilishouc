@@ -1,22 +1,61 @@
 package com.magnetvault.app;
 
+import android.animation.AnimatorInflater;
+import android.animation.StateListAnimator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.text.InputType;
 import android.text.TextUtils;
+import android.transition.ChangeBounds;
+import android.transition.Fade;
+import android.transition.TransitionManager;
+import android.transition.TransitionSet;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.*;
 
-/** Native components with one spacing, typography and interaction system. */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+/** Native components with unified spacing, typography, SVGs, and tactile interaction system. */
 public final class Design {
     private Design() {}
 
+    /** Wrapper holder for an EditText with eye password toggle and focus ring border. */
+    public static final class PasswordField {
+        public final LinearLayout container;
+        public final EditText input;
+        public final ImageButton toggle;
+
+        PasswordField(LinearLayout container, EditText input, ImageButton toggle) {
+            this.container = container;
+            this.input = input;
+            this.toggle = toggle;
+        }
+    }
+
     public static int color(Activity a, int id) {
-        return a.getResources().getColor(id);
+        return a.getColor(id);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static void allowImeResize(Window w, boolean showIme) {
+        if (w == null) return;
+        int mode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
+        if (showIme) mode |= WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE;
+        w.setSoftInputMode(mode);
     }
 
     public static LinearLayout column(Activity a) {
@@ -60,6 +99,70 @@ public final class Design {
         parent.addView(new View(a), new LinearLayout.LayoutParams(Ui.dp(a, dp), 1));
     }
 
+    /** Tactile press-scale feedback using StateListAnimator; respects system animation toggle. */
+    public static void tactile(View v) {
+        if (v == null || !ValueAnimator.areAnimatorsEnabled()) return;
+        try {
+            StateListAnimator sla =
+                    AnimatorInflater.loadStateListAnimator(v.getContext(), R.animator.press_scale);
+            v.setStateListAnimator(sla);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Smooth layout transition for expand/collapse/filter changes inside a container. */
+    public static void animate(ViewGroup container) {
+        if (container == null || !ValueAnimator.areAnimatorsEnabled()) return;
+        try {
+            TransitionSet set = new TransitionSet();
+            set.setOrdering(TransitionSet.ORDERING_TOGETHER);
+            ChangeBounds bounds = new ChangeBounds();
+            bounds.setDuration(190);
+            bounds.setInterpolator(new DecelerateInterpolator());
+            Fade fadeIn = new Fade(Fade.IN);
+            fadeIn.setDuration(160);
+            set.addTransition(bounds);
+            set.addTransition(fadeIn);
+            TransitionManager.beginDelayedTransition(container, set);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** Playful overshoot pop bounce for star toggles and confirmation badges. */
+    public static void popBounce(View v) {
+        if (v == null || !ValueAnimator.areAnimatorsEnabled()) return;
+        v.animate().cancel();
+        v.setScaleX(0.84f);
+        v.setScaleY(0.84f);
+        v.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(240)
+                .setInterpolator(new OvershootInterpolator(2.4f))
+                .start();
+    }
+
+    /** Smooth rotation animation (e.g. accordion chevrons). */
+    public static void rotateTo(View v, float degrees) {
+        if (v == null) return;
+        if (!ValueAnimator.areAnimatorsEnabled()) {
+            v.setRotation(degrees);
+            return;
+        }
+        v.animate()
+                .rotation(degrees)
+                .setDuration(180)
+                .setInterpolator(new DecelerateInterpolator())
+                .start();
+    }
+
+    /** Links focus state of an EditText to its wrapper's activated background state. */
+    public static void focusWrap(View wrapper, EditText edit) {
+        if (wrapper == null || edit == null) return;
+        wrapper.setActivated(edit.hasFocus());
+        edit.setOnFocusChangeListener((v, hasFocus) -> wrapper.setActivated(hasFocus));
+    }
+
     public static Button button(
             Activity a, String label, int icon, boolean primary, Runnable action) {
         Button b = new Button(a);
@@ -67,7 +170,6 @@ public final class Design {
         b.setTextSize(15);
         b.setTypeface(null, Typeface.BOLD);
         b.setAllCaps(false);
-        b.setStateListAnimator(null);
         b.setMinHeight(Ui.dp(a, 48));
         b.setMinimumHeight(Ui.dp(a, 48));
         b.setGravity(Gravity.CENTER);
@@ -82,6 +184,7 @@ public final class Design {
             b.setCompoundDrawablePadding(Ui.dp(a, 8));
         }
         b.setOnClickListener(v -> action.run());
+        tactile(b);
         return b;
     }
 
@@ -124,6 +227,7 @@ public final class Design {
         tv.setSingleLine(true);
         pill.addView(tv);
         pill.setOnClickListener(v -> action.run());
+        tactile(pill);
         return pill;
     }
 
@@ -139,6 +243,7 @@ public final class Design {
             tv.setFocusable(true);
             tv.setClickable(true);
             tv.setOnClickListener(v -> action.run());
+            tactile(tv);
         }
         return tv;
     }
@@ -162,6 +267,181 @@ public final class Design {
         return box;
     }
 
+    /** Segmented control pill switcher (e.g. Folders|Tags, Batch|Single). */
+    public static LinearLayout segmented(
+            Activity a, String[] labels, int[] icons, int activeIndex, Consumer<Integer> onPick) {
+        LinearLayout track = row(a);
+        track.setBackgroundResource(R.drawable.bg_seg_track);
+        pad(a, track, 4, 4, 4);
+        track.setMinimumHeight(Ui.dp(a, 46));
+        for (int i = 0; i < labels.length; i++) {
+            final int idx = i;
+            boolean active = idx == activeIndex;
+            LinearLayout seg = row(a);
+            seg.setGravity(Gravity.CENTER);
+            seg.setMinimumHeight(Ui.dp(a, 38));
+            pad(a, seg, 10, 6, 6);
+            seg.setBackgroundResource(active ? R.drawable.bg_seg_thumb : R.drawable.bg_flat);
+            if (active) seg.setElevation(Ui.dp(a, 1));
+            seg.setFocusable(true);
+            seg.setClickable(true);
+            seg.setSelected(active);
+            if (icons != null && i < icons.length && icons[i] != 0) {
+                ImageView iv = new ImageView(a);
+                iv.setImageResource(icons[i]);
+                iv.setColorFilter(color(a, active ? R.color.c_accent : R.color.c_text2));
+                iv.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                LinearLayout.LayoutParams ip =
+                        new LinearLayout.LayoutParams(Ui.dp(a, 16), Ui.dp(a, 16));
+                ip.rightMargin = Ui.dp(a, 6);
+                seg.addView(iv, ip);
+            }
+            TextView tv = text(a, labels[i], 13, active ? R.color.c_accent : R.color.c_text2);
+            tv.setTypeface(null, active ? Typeface.BOLD : Typeface.NORMAL);
+            tv.setSingleLine(true);
+            tv.setEllipsize(TextUtils.TruncateAt.END);
+            seg.addView(tv);
+            seg.setOnClickListener(
+                    v -> {
+                        if (idx != activeIndex) onPick.accept(idx);
+                    });
+            tactile(seg);
+            track.addView(seg, new LinearLayout.LayoutParams(0, -2, 1));
+        }
+        return track;
+    }
+
+    /** Visual circular color swatches replacing plain-text Spinner dropdowns. */
+    public static HorizontalScrollView colorSwatches(
+            Activity a, int initialColor, Consumer<Integer> onPick) {
+        final int[] picked = {initialColor};
+        LinearLayout row = row(a);
+        pad(a, row, 2, 4, 4);
+        final List<FrameLayout> dots = new ArrayList<>();
+        for (int i = 0; i < Ui.COLORS.length; i++) {
+            final int c = Ui.COLORS[i];
+            FrameLayout dot = new FrameLayout(a);
+            int size = Ui.dp(a, 36);
+            LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(size, size);
+            if (i > 0) dp.leftMargin = Ui.dp(a, 10);
+            dot.setLayoutParams(dp);
+            GradientDrawable gd = new GradientDrawable();
+            gd.setShape(GradientDrawable.OVAL);
+            gd.setColor(c);
+            dot.setBackground(gd);
+
+            ImageView check = new ImageView(a);
+            check.setImageResource(R.drawable.ic_check);
+            check.setColorFilter(Color.WHITE);
+            check.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            dot.addView(
+                    check,
+                    new FrameLayout.LayoutParams(Ui.dp(a, 18), Ui.dp(a, 18), Gravity.CENTER));
+            dot.setFocusable(true);
+            dot.setClickable(true);
+            dot.setContentDescription("颜色 " + Ui.COLOR_NAMES[i]);
+            tactile(dot);
+            dots.add(dot);
+            dot.setOnClickListener(
+                    v -> {
+                        picked[0] = c;
+                        syncSwatches(a, dots, c);
+                        popBounce(dot);
+                        onPick.accept(c);
+                    });
+            row.addView(dot);
+        }
+        syncSwatches(a, dots, initialColor);
+        HorizontalScrollView scroll = new HorizontalScrollView(a);
+        scroll.setHorizontalScrollBarEnabled(false);
+        scroll.addView(row);
+        return scroll;
+    }
+
+    private static void syncSwatches(Activity a, List<FrameLayout> dots, int selectedColor) {
+        int ring = color(a, R.color.c_card);
+        for (int i = 0; i < dots.size() && i < Ui.COLORS.length; i++) {
+            boolean on = Ui.COLORS[i] == selectedColor;
+            FrameLayout dot = dots.get(i);
+            dot.getChildAt(0).setVisibility(on ? View.VISIBLE : View.GONE);
+            dot.setScaleX(on ? 1.12f : 1f);
+            dot.setScaleY(on ? 1.12f : 1f);
+            if (dot.getBackground() instanceof GradientDrawable) {
+                GradientDrawable gd = (GradientDrawable) dot.getBackground();
+                gd.setStroke(on ? Ui.dp(a, 2) : 0, on ? ring : Color.TRANSPARENT);
+            }
+        }
+    }
+
+    /** Password input wrapper with focus ring and SVG eye visibility toggle. */
+    public static PasswordField passwordBox(Activity a, String hint) {
+        LinearLayout box = row(a);
+        box.setBackgroundResource(R.drawable.bg_input_box);
+        box.setMinimumHeight(Ui.dp(a, 52));
+        pad(a, box, 12, 2, 2);
+
+        EditText et = new EditText(a);
+        et.setHint(hint);
+        et.setContentDescription(hint);
+        et.setSingleLine(true);
+        et.setTextSize(15);
+        et.setTextColor(color(a, R.color.c_text));
+        et.setHintTextColor(color(a, R.color.c_text2));
+        et.setBackground(null);
+        pad(a, et, 4, 12, 12);
+        et.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        box.addView(et, new LinearLayout.LayoutParams(0, -2, 1));
+
+        final boolean[] visible = {false};
+        ImageButton eye =
+                quietIcon(
+                        a,
+                        R.drawable.ic_eye,
+                        "显示密码",
+                        () -> {});
+        eye.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(a, 42), Ui.dp(a, 42)));
+        pad(a, eye, 10, 10, 10);
+        eye.setOnClickListener(
+                v -> {
+                    visible[0] = !visible[0];
+                    int selStart = et.getSelectionStart();
+                    int selEnd = et.getSelectionEnd();
+                    et.setInputType(
+                            InputType.TYPE_CLASS_TEXT
+                                    | (visible[0]
+                                            ? InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                                            : InputType.TYPE_TEXT_VARIATION_PASSWORD));
+                    if (selStart >= 0 && selEnd >= 0) et.setSelection(selStart, selEnd);
+                    eye.setImageResource(visible[0] ? R.drawable.ic_eye_off : R.drawable.ic_eye);
+                    eye.setColorFilter(
+                            color(a, visible[0] ? R.color.c_accent : R.color.c_text2));
+                    eye.setContentDescription(visible[0] ? "隐藏密码" : "显示密码");
+                });
+        box.addView(eye);
+        focusWrap(box, et);
+        return new PasswordField(box, et, eye);
+    }
+
+    /** Clean modern pill switch indicator for preference / backup cards. */
+    public static LinearLayout toggleBadge(Activity a, boolean on, String labelOn, String labelOff) {
+        LinearLayout pill = row(a);
+        pill.setGravity(Gravity.CENTER);
+        pill.setBackgroundResource(on ? R.drawable.bg_pill_on : R.drawable.bg_pill);
+        pad(a, pill, 10, 5, 5);
+        ImageView dot = new ImageView(a);
+        dot.setImageResource(on ? R.drawable.ic_check : R.drawable.ic_circle);
+        dot.setColorFilter(color(a, on ? R.color.c_accent : R.color.c_text2));
+        dot.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(Ui.dp(a, 14), Ui.dp(a, 14));
+        dp.rightMargin = Ui.dp(a, 4);
+        pill.addView(dot, dp);
+        TextView tv =
+                text(a, on ? labelOn : labelOff, 12, on ? R.color.c_accent : R.color.c_text2);
+        tv.setTypeface(null, on ? Typeface.BOLD : Typeface.NORMAL);
+        pill.addView(tv);
+        return pill;
+    }
+
     public static ImageButton icon(Activity a, int icon, String label, Runnable action) {
         ImageButton b = new ImageButton(a);
         b.setImageResource(icon);
@@ -171,6 +451,7 @@ public final class Design {
         pad(a, b, 12, 12, 12);
         b.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(a, 48), Ui.dp(a, 48)));
         b.setOnClickListener(v -> action.run());
+        tactile(b);
         return b;
     }
 
@@ -184,7 +465,6 @@ public final class Design {
         Button b = new Button(a);
         b.setText(label);
         b.setAllCaps(false);
-        b.setStateListAnimator(null);
         b.setTextSize(14);
         b.setTypeface(null, Typeface.BOLD);
         b.setTextColor(color(a, R.color.c_accent));
@@ -193,6 +473,7 @@ public final class Design {
         b.setMinimumHeight(Ui.dp(a, 44));
         pad(a, b, 12, 8, 8);
         b.setOnClickListener(v -> action.run());
+        tactile(b);
         return b;
     }
 
@@ -204,7 +485,7 @@ public final class Design {
     }
 
     public static void section(Activity a, LinearLayout parent, String title, String subtitle) {
-        gap(a, parent, 20);
+        gap(a, parent, 18);
         TextView t = text(a, title, 15, R.color.c_text);
         t.setTypeface(null, Typeface.BOLD);
         if (android.os.Build.VERSION.SDK_INT >= 28) t.setAccessibilityHeading(true);
@@ -254,6 +535,7 @@ public final class Design {
         box.setFocusable(true);
         box.setClickable(true);
         box.setOnClickListener(v -> action.run());
+        tactile(box);
         return box;
     }
 
@@ -335,7 +617,7 @@ public final class Design {
         v.setContentDescription(label);
         v.setTextColor(color(a, R.color.c_text));
         v.setHintTextColor(color(a, R.color.c_text2));
-        v.setBackgroundResource(R.drawable.bg_card);
+        v.setBackgroundResource(R.drawable.bg_input_box);
         pad(a, v, 14, 13, 13);
         v.setMinHeight(Ui.dp(a, 50));
         v.setInputType(
@@ -352,7 +634,7 @@ public final class Design {
             if (pi != null && pi.versionName != null) return pi.versionName;
         } catch (Exception ignored) {
         }
-        return "2.4.3";
+        return "2.5.0";
     }
 
     /** Soft alpha version of an arbitrary folder color for icon badges. */

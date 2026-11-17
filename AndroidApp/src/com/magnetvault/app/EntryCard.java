@@ -66,7 +66,14 @@ public final class EntryCard {
 
     public static View inflate(Activity act, ViewGroup parent) {
         View view = act.getLayoutInflater().inflate(R.layout.item_entry, parent, false);
-        view.setTag(new Holder(view));
+        Holder h = new Holder(view);
+        Design.tactile(h.copyBtn);
+        Design.tactile(h.actOpen);
+        Design.tactile(h.actCopy);
+        Design.tactile(h.actStar);
+        Design.tactile(h.actDetail);
+        Design.tactile(h.actMore);
+        view.setTag(h);
         return view;
     }
 
@@ -180,7 +187,7 @@ public final class EntryCard {
             h.copyBtn.setContentDescription("复制链接 " + rawTitle);
             h.copyBtn.setOnClickListener(v -> listener.onCopy(e));
             h.chev.setVisibility(View.VISIBLE);
-            h.chev.setRotation(showExpanded ? 180f : 0f);
+            Design.rotateTo(h.chev, showExpanded ? 180f : 0f);
             cp.rightMargin = Ui.dp(act, 2);
         }
         h.contentCol.setLayoutParams(cp);
@@ -203,7 +210,11 @@ public final class EntryCard {
             h.actStarLabel.setText(e.starred ? "已星标" : "星标");
             h.actOpen.setOnClickListener(v -> listener.onOpen(e));
             h.actCopy.setOnClickListener(v -> listener.onCopy(e));
-            h.actStar.setOnClickListener(v -> listener.onToggleStar(e));
+            h.actStar.setOnClickListener(
+                    v -> {
+                        Design.popBounce(h.actStarIcon);
+                        listener.onToggleStar(e);
+                    });
             h.actDetail.setOnClickListener(v -> listener.onDetail(e));
             h.actMore.setOnClickListener(v -> listener.onMore(e));
         } else {

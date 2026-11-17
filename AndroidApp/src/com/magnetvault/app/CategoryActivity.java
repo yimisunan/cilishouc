@@ -1,6 +1,5 @@
 package com.magnetvault.app;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -13,13 +12,15 @@ import android.widget.*;
 
 import java.util.*;
 
-/** Category management displays one level at a time. Row taps browse; more buttons manage. */
+/** Category & tag manager displaying one level at a time, delegating CRUD to CategoryEditor sheets. */
 public class CategoryActivity extends AppActivity {
     private boolean tags, searching, loading;
     private String parentId, query = "", positionKey, pendingAction, pendingTarget;
-    private LinearLayout root, toolbar, content;
+    private LinearLayout root, toolbar, content, searchWrap;
+    private FrameLayout modeSlot;
     private TextView summary, empty;
     private EditText search;
+    private ImageButton clearSearch;
     private ListView list;
     private final List<Category> categories = new ArrayList<>();
     private final List<String> tagNames = new ArrayList<>();
@@ -54,24 +55,45 @@ public class CategoryActivity extends AppActivity {
         root.addView(toolbar);
         content = Design.column(this);
         Design.pad(this, content, 14, 4, 0);
-        LinearLayout tabs = Design.row(this);
-        String[] names = {"分类", "标签"};
-        for (int i = 0; i < names.length; i++) {
-            final boolean value = i == 1;
-            Button b = Design.chip(this, names[i], tags == value, () -> switchMode(value));
-            b.setTag("mode:" + i);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
-            lp.rightMargin = Ui.dp(this, 8);
-            tabs.addView(b, lp);
-        }
-        content.addView(tabs);
-        Design.gap(this, content, 6);
-        search = Design.input(this, "搜索当前层级分类", false);
+
+        modeSlot = new FrameLayout(this);
+        content.addView(modeSlot);
+        Design.gap(this, content, 8);
+
+        searchWrap = Design.row(this);
+        searchWrap.setBackgroundResource(R.drawable.bg_input_box);
+        searchWrap.setMinimumHeight(Ui.dp(this, 44));
+        Design.pad(this, searchWrap, 12, 2, 2);
+        ImageView searchIcon = new ImageView(this);
+        searchIcon.setImageResource(R.drawable.ic_search);
+        searchIcon.setColorFilter(Design.color(this, R.color.c_text2));
+        searchIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams sip =
+                new LinearLayout.LayoutParams(Ui.dp(this, 17), Ui.dp(this, 17));
+        sip.rightMargin = Ui.dp(this, 8);
+        searchWrap.addView(searchIcon, sip);
+
+        search = new EditText(this);
+        search.setHint("搜索当前层级分类");
+        search.setContentDescription("搜索");
         search.setSingleLine(true);
         search.setTextSize(14);
+        search.setTextColor(Design.color(this, R.color.c_text));
+        search.setHintTextColor(Design.color(this, R.color.c_text2));
+        search.setBackground(null);
         search.setText(query);
-        search.setVisibility(searching ? View.VISIBLE : View.GONE);
-        content.addView(search);
+        searchWrap.addView(search, new LinearLayout.LayoutParams(0, -2, 1));
+
+        clearSearch =
+                Design.quietIcon(this, R.drawable.ic_close, "清空搜索", () -> search.setText(""));
+        clearSearch.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 36), Ui.dp(this, 36)));
+        Design.pad(this, clearSearch, 9, 9, 9);
+        clearSearch.setVisibility(query.isEmpty() ? View.GONE : View.VISIBLE);
+        searchWrap.addView(clearSearch);
+        Design.focusWrap(searchWrap, search);
+        searchWrap.setVisibility(searching ? View.VISIBLE : View.GONE);
+        content.addView(searchWrap);
+
         search.addTextChangedListener(
                 new TextWatcher() {
                     public void beforeTextChanged(CharSequence s, int a, int c, int f) {}
@@ -80,13 +102,15 @@ public class CategoryActivity extends AppActivity {
 
                     public void afterTextChanged(Editable s) {
                         query = s.toString();
+                        clearSearch.setVisibility(query.isEmpty() ? View.GONE : View.VISIBLE);
                         filter(false);
                     }
                 });
         summary = Design.text(this, "正在读取…", 12, R.color.c_text2);
-        Design.pad(this, summary, 4, 6, 4);
+        Design.pad(this, summary, 4, 8, 4);
         content.addView(summary);
         root.addView(content);
+
         list = new ListView(this);
         list.setDivider(null);
         list.setDividerHeight(0);
@@ -179,11 +203,15 @@ public class CategoryActivity extends AppActivity {
                                 Ui.toast(this, "目标分类已不存在");
                                 return;
                             }
-                            edit(null, pendingTarget);
+                            CategoryEditor.editCategory(this, null, pendingTarget, this::reload);
                         } else if (target != null) {
-                            if (action.equals("edit")) edit(target, null);
-                            if (action.equals("move")) move(target);
-                            if (action.equals("delete")) delete(target);
+                            if (action.equals("edit"))
+                                CategoryEditor.editCategory(this, target, null, this::reload);
+                            if (action.equals("move"))
+                                CategoryEditor.moveCategory(this, target, categories, this::reload);
+                            if (action.equals("delete"))
+                                CategoryEditor.deleteCategory(
+                                        this, target, categories, this::reload);
                         } else Ui.toast(this, "分类已不存在");
                     }
                 },
@@ -237,24 +265,22 @@ public class CategoryActivity extends AppActivity {
                         R.drawable.ic_add,
                         tags ? "新建标签" : "新建分类",
                         () -> {
-                            if (tags) editTag(null);
-                            else edit(null, parentId);
+                            if (tags) CategoryEditor.editTag(this, null, this::reload);
+                            else CategoryEditor.editCategory(this, null, parentId, this::reload);
                         }));
         bar.addView(Design.quietIcon(this, R.drawable.ic_more, "管理选项", this::pageActions));
         toolbar.addView(bar);
-        for (int i = 0; i < 2; i++) {
-            Button b = content.findViewWithTag("mode:" + i);
-            b.setSelected(tags == (i == 1));
-            b.setTypeface(
-                    null,
-                    tags == (i == 1)
-                            ? android.graphics.Typeface.BOLD
-                            : android.graphics.Typeface.NORMAL);
-            b.setTextColor(
-                    Design.color(this, tags == (i == 1) ? R.color.c_accent : R.color.c_text2));
-        }
+
+        modeSlot.removeAllViews();
+        modeSlot.addView(
+                Design.segmented(
+                        this,
+                        new String[] {"分类", "标签"},
+                        new int[] {R.drawable.ic_folder, R.drawable.ic_tag},
+                        tags ? 1 : 0,
+                        idx -> switchMode(idx == 1)));
         search.setHint(tags ? "搜索标签" : "搜索当前层级分类");
-        search.setVisibility(searching ? View.VISIBLE : View.GONE);
+        searchWrap.setVisibility(searching ? View.VISIBLE : View.GONE);
     }
 
     private void toggleSearch() {
@@ -327,10 +353,10 @@ public class CategoryActivity extends AppActivity {
                     this,
                     "标签管理",
                     new String[] {"新建标签", "清理未使用标签"},
-                    null,
+                    new int[] {R.drawable.ic_add, R.drawable.ic_trash},
                     (d, w) -> {
-                        if (w == 0) editTag(null);
-                        else cleanUnused();
+                        if (w == 0) CategoryEditor.editTag(this, null, this::reload);
+                        else CategoryEditor.cleanUnusedTags(this, this::reload);
                     });
         else {
             Category current = find(parentId);
@@ -338,18 +364,23 @@ public class CategoryActivity extends AppActivity {
                     current == null
                             ? new String[] {"新建分类"}
                             : new String[] {"查看当前分类收藏", "新建子分类", "管理当前分类"};
+            int[] icons =
+                    current == null
+                            ? new int[] {R.drawable.ic_add}
+                            : new int[] {R.drawable.ic_folder, R.drawable.ic_add, R.drawable.ic_edit};
             Ui.menuSheet(
                     this,
                     "分类管理",
                     labels,
-                    null,
+                    icons,
                     (d, w) -> {
                         if (current == null) {
-                            edit(null, null);
+                            CategoryEditor.editCategory(this, null, null, this::reload);
                             return;
                         }
                         if (w == 0) showCollection(current.id);
-                        if (w == 1) edit(null, parentId);
+                        if (w == 1)
+                            CategoryEditor.editCategory(this, null, parentId, this::reload);
                         if (w == 2) categoryActions(current);
                     });
         }
@@ -405,348 +436,25 @@ public class CategoryActivity extends AppActivity {
                 }
             cur = next;
         }
-        return android.text.TextUtils.join(" / ", names);
+        return TextUtils.join(" / ", names);
     }
 
     private void categoryActions(Category c) {
-        Ui.menuSheet(
-                this,
-                path(c),
-                new String[] {"查看收藏", "编辑名称与颜色", "新建子分类", "移动分类", "删除分类"},
-                new int[] {
-                    R.drawable.ic_folder,
-                    R.drawable.ic_edit,
-                    R.drawable.ic_add,
-                    R.drawable.ic_move,
-                    R.drawable.ic_trash
-                },
-                (d, w) -> {
-                    if (w == 0) showCollection(c.id);
-                    if (w == 1) edit(c, null);
-                    if (w == 2) edit(null, c.id);
-                    if (w == 3) move(c);
-                    if (w == 4) delete(c);
-                });
+        CategoryEditor.categoryActions(
+                this, c, categories, () -> showCollection(c.id), this::reload);
     }
 
     private void tagActions(String name) {
-        Ui.menuSheet(
+        CategoryEditor.tagActions(
                 this,
                 name,
-                new String[] {"查看相关收藏", "重命名标签", "合并到其他标签", "删除标签"},
-                new int[] {
-                    R.drawable.ic_search,
-                    R.drawable.ic_edit,
-                    R.drawable.ic_move,
-                    R.drawable.ic_trash
+                tagNames,
+                () -> {
+                    Intent i = new Intent(this, SearchActivity.class);
+                    i.putExtra("tag", name);
+                    startActivity(i);
                 },
-                (d, w) -> {
-                    if (w == 0) {
-                        Intent i = new Intent(this, SearchActivity.class);
-                        i.putExtra("tag", name);
-                        startActivity(i);
-                    }
-                    if (w == 1) editTag(name);
-                    if (w == 2) merge(name);
-                    if (w == 3) deleteTag(name);
-                });
-    }
-
-    private void edit(Category c, String parent) {
-        if (tags) {
-            editTag(null);
-            return;
-        }
-        LinearLayout box = Design.column(this);
-        Design.pad(this, box, 24, 8, 16);
-        Design.label(this, box, "分类名称");
-        EditText input = Design.input(this, "例如：工作资料", false);
-        box.addView(input);
-        if (c != null) input.setText(c.name);
-        Design.label(this, box, "颜色");
-        Spinner colors = new Spinner(this);
-        colors.setMinimumHeight(Ui.dp(this, 48));
-        colors.setAdapter(
-                new ArrayAdapter<>(
-                        this, android.R.layout.simple_spinner_dropdown_item, Ui.COLOR_NAMES));
-        if (c != null)
-            for (int i = 0; i < Ui.COLORS.length; i++)
-                if (Ui.COLORS[i] == c.color) colors.setSelection(i);
-        box.addView(colors);
-        AlertDialog dialog =
-                new AlertDialog.Builder(this)
-                        .setTitle(c == null ? (parent == null ? "新建分类" : "新建子分类") : "编辑分类")
-                        .setView(Design.scroll(this, box))
-                        .setNegativeButton("取消", null)
-                        .setPositiveButton("保存", null)
-                        .create();
-        dialog.setOnShowListener(
-                d ->
-                        dialog.getButton(-1)
-                                .setOnClickListener(
-                                        v -> {
-                                            String name = input.getText().toString().trim();
-                                            if (name.isEmpty()) {
-                                                input.setError("请输入分类名称");
-                                                input.requestFocus();
-                                                return;
-                                            }
-                                            int color = Ui.COLORS[colors.getSelectedItemPosition()];
-                                            dialog.getButton(-1).setEnabled(false);
-                                            load(
-                                                    () ->
-                                                            c == null
-                                                                    ? Repo.addCategory(
-                                                                            this, name, color,
-                                                                            parent)
-                                                                    : Repo.updateCategory(
-                                                                            this, c.id, name,
-                                                                            color),
-                                                    error -> {
-                                                        dialog.getButton(-1).setEnabled(true);
-                                                        if (error != null) {
-                                                            input.setError(error);
-                                                            return;
-                                                        }
-                                                        dialog.dismiss();
-                                                        reload();
-                                                        Ui.toast(this, "分类已保存");
-                                                    },
-                                                    failure -> {
-                                                        dialog.getButton(-1).setEnabled(true);
-                                                        input.setError("保存未完成，请重试");
-                                                    });
-                                        }));
-        dialog.show();
-    }
-
-    private void editTag(String original) {
-        LinearLayout box = Design.column(this);
-        Design.pad(this, box, 24, 8, 16);
-        Design.label(this, box, "标签名称");
-        EditText input = Design.input(this, "例如：待看、高清", false);
-        box.addView(input);
-        if (original != null) input.setText(original);
-        AlertDialog dialog =
-                new AlertDialog.Builder(this)
-                        .setTitle(original == null ? "新建标签" : "重命名标签")
-                        .setView(Design.scroll(this, box))
-                        .setNegativeButton("取消", null)
-                        .setPositiveButton("保存", null)
-                        .create();
-        dialog.setOnShowListener(
-                d ->
-                        dialog.getButton(-1)
-                                .setOnClickListener(
-                                        v -> {
-                                            String name = input.getText().toString().trim();
-                                            if (name.isEmpty()) {
-                                                input.setError("请输入标签名称");
-                                                return;
-                                            }
-                                            dialog.getButton(-1).setEnabled(false);
-                                            load(
-                                                    () ->
-                                                            original == null
-                                                                    ? Repo.addTag(this, name)
-                                                                    : Repo.renameTag(
-                                                                            this, original, name,
-                                                                            false),
-                                                    error -> {
-                                                        dialog.getButton(-1).setEnabled(true);
-                                                        if (error != null) {
-                                                            input.setError(error);
-                                                            return;
-                                                        }
-                                                        dialog.dismiss();
-                                                        reload();
-                                                        Ui.toast(this, "标签已保存");
-                                                    },
-                                                    failure -> {
-                                                        dialog.getButton(-1).setEnabled(true);
-                                                        input.setError("保存未完成，请重试");
-                                                    });
-                                        }));
-        dialog.show();
-    }
-
-    private void move(Category source) {
-        Set<String> excluded = new HashSet<>();
-        excluded.add(source.id);
-        boolean added = true;
-        while (added) {
-            added = false;
-            for (Category c : categories) {
-                if (!excluded.contains(c.id) && excluded.contains(c.parentId)) {
-                    excluded.add(c.id);
-                    added = true;
-                }
-            }
-        }
-        CategoryPicker.show(
-                this,
-                "移动「" + source.name + "」到",
-                source.parentId,
-                "设为顶层分类",
-                "放在根目录作为一级文件夹",
-                excluded,
-                false,
-                newParentId ->
-                        load(
-                                () -> Repo.setCategoryParent(this, source.id, newParentId),
-                                error -> {
-                                    Ui.toast(this, error == null ? "已移动分类" : error);
-                                    reload();
-                                }));
-    }
-
-    private void delete(Category c) {
-        final String[] targetId = {null};
-        LinearLayout box = Design.column(this);
-        Design.pad(this, box, 24, 8, 16);
-        box.addView(
-                Design.text(
-                        this,
-                        c.count
-                                + " 条收藏将移到下方位置。"
-                                + (c.childCount > 0
-                                        ? "\n" + c.childCount + " 个子分类会上移一级；重名时自动编号。"
-                                        : ""),
-                        15,
-                        R.color.c_text2));
-        Design.label(this, box, "收藏保留位置");
-        final CategoryPicker.Card[] cardRef = {null};
-        cardRef[0] =
-                CategoryPicker.selectorCard(
-                        this,
-                        () ->
-                                CategoryPicker.show(
-                                        this,
-                                        "选择收藏保留位置",
-                                        targetId[0],
-                                        "移到未分类",
-                                        "清除这些收藏的分类归属",
-                                        Collections.singleton(c.id),
-                                        false,
-                                        pickedId -> {
-                                            targetId[0] = pickedId;
-                                            CategoryPicker.bindSelectorCard(
-                                                    this,
-                                                    cardRef[0],
-                                                    categories,
-                                                    targetId[0],
-                                                    "移到未分类",
-                                                    "清除这些收藏的分类归属");
-                                        }));
-        CategoryPicker.bindSelectorCard(
-                this,
-                cardRef[0],
-                categories,
-                targetId[0],
-                "移到未分类",
-                "清除这些收藏的分类归属");
-        box.addView(cardRef[0].root);
-        new AlertDialog.Builder(this)
-                .setTitle("删除「" + c.name + "」？")
-                .setView(Design.scroll(this, box))
-                .setNegativeButton("取消", null)
-                .setPositiveButton(
-                        "删除分类",
-                        (d, w) ->
-                                load(
-                                        () -> {
-                                            Repo.deleteCategory(this, c.id, targetId[0]);
-                                            return true;
-                                        },
-                                        ok -> {
-                                            reload();
-                                            Ui.toast(this, "分类已删除，收藏已保留");
-                                        }))
-                .show();
-    }
-
-    private void deleteTag(String name) {
-        load(
-                () -> Repo.tagTotalUsage(this, name),
-                count ->
-                        new AlertDialog.Builder(this)
-                                .setTitle("删除标签「" + name + "」？")
-                                .setMessage("将从 " + count + " 条收藏中移除此标签（包括回收站）。收藏与其他标签会保留。")
-                                .setNegativeButton("取消", null)
-                                .setPositiveButton(
-                                        "删除标签",
-                                        (d, w) ->
-                                                load(
-                                                        () -> {
-                                                            Repo.deleteTag(this, name);
-                                                            return true;
-                                                        },
-                                                        ok -> {
-                                                            reload();
-                                                            Ui.toast(this, "标签已删除");
-                                                        }))
-                                .show());
-    }
-
-    private void merge(String source) {
-        List<String> targets = new ArrayList<>(tagNames);
-        targets.remove(source);
-        if (targets.isEmpty()) {
-            Ui.toast(this, "先创建另一个标签，再选择合并");
-            return;
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("将「" + source + "」合并到")
-                .setItems(
-                        targets.toArray(new String[0]),
-                        (d, w) ->
-                                new AlertDialog.Builder(this)
-                                        .setTitle("确认合并标签")
-                                        .setMessage(
-                                                "所有「"
-                                                        + source
-                                                        + "」关联会归入「"
-                                                        + targets.get(w)
-                                                        + "」，相同关联自动去重。")
-                                        .setNegativeButton("取消", null)
-                                        .setPositiveButton(
-                                                "合并",
-                                                (x, y) ->
-                                                        load(
-                                                                () ->
-                                                                        Repo.renameTag(
-                                                                                this,
-                                                                                source,
-                                                                                targets.get(w),
-                                                                                true),
-                                                                error -> {
-                                                                    Ui.toast(
-                                                                            this,
-                                                                            error == null
-                                                                                    ? "标签已合并"
-                                                                                    : error);
-                                                                    reload();
-                                                                }))
-                                        .show())
-                .setNegativeButton("取消", null)
-                .show();
-    }
-
-    private void cleanUnused() {
-        new AlertDialog.Builder(this)
-                .setTitle("清理未使用标签？")
-                .setMessage("只清理未关联任何收藏的标签。回收站中仍使用的标签会保留。")
-                .setNegativeButton("取消", null)
-                .setPositiveButton(
-                        "清理",
-                        (d, w) ->
-                                load(
-                                        () -> Repo.deleteUnusedTags(this),
-                                        n -> {
-                                            Ui.toast(this, "已清理 " + n + " 个标签");
-                                            reload();
-                                        }))
-                .show();
+                this::reload);
     }
 
     private class ManagerAdapter extends BaseAdapter {
@@ -771,6 +479,7 @@ public class CategoryActivity extends AppActivity {
                 Design.pad(CategoryActivity.this, row, 12, 12, 12);
                 row.setMinimumHeight(Ui.dp(CategoryActivity.this, 66));
                 row.setBackgroundResource(R.drawable.bg_card);
+                Design.tactile(row);
 
                 FrameLayout badge =
                         Design.iconBadge(

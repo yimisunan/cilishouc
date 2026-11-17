@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="44dp"
+    android:viewportWidth="64"
+    android:viewportHeight="44">
+    <path
+        android:fillColor="@color/c_card2"
+        android:pathData="M8,2 H56 Q62,2 62,8 V36 Q62,42 56,42 H8 Q2,42 2,36 V8 Q2,2 8,2 Z"
+        android:strokeColor="@color/c_divider"
+        android:strokeWidth="1.2" />
+    <!-- Row 1 compact card -->
+    <path
+        android:fillColor="@color/c_card"
+        android:pathData="M8,6 H56 Q58,6 58,8 V19 Q58,21 56,21 H8 Q6,21 6,19 V8 Q6,6 8,6 Z" />
+    <path
+        android:fillColor="@color/c_accent_soft"
+        android:pathData="M10,9.5 H22 Q23.5,9.5 23.5,11 V13 Q23.5,14.5 22,14.5 H10 Q8.5,14.5 8.5,13 V11 Q8.5,9.5 10,9.5 Z" />
+    <path
+        android:fillColor="@color/c_accent2_soft"
+        android:pathData="M25.5,9.5 H35 Q36.5,9.5 36.5,11 V13 Q36.5,14.5 35,14.5 H25.5 Q24,14.5 24,13 V11 Q24,9.5 25.5,9.5 Z" />
+    <path
+        android:fillColor="@color/c_text"
+        android:pathData="M9.5,17 H46 V18.8 H9.5 Z" />
+    <!-- Row 2 compact card -->
+    <path
+        android:fillColor="@color/c_card"
+        android:pathData="M8,24 H56 Q58,24 58,26 V36 Q58,38 56,38 H8 Q6,38 6,36 V26 Q6,24 8,24 Z" />
+    <path
+        android:fillColor="@color/c_accent_soft"
+        android:pathData="M10,27 H20 Q21.5,27 21.5,28.5 V30.5 Q21.5,32 20,32 H10 Q8.5,32 8.5,30.5 V28.5 Q8.5,27 10,27 Z" />
+    <path
+        android:fillColor="@color/c_text2"
+        android:pathData="M9.5,34 H39 V35.8 H9.5 Z" />
+</vector>

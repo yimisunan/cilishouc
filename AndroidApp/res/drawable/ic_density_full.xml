@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="44dp"
+    android:viewportWidth="64"
+    android:viewportHeight="44">
+    <path
+        android:fillColor="@color/c_card2"
+        android:pathData="M8,2 H56 Q62,2 62,8 V36 Q62,42 56,42 H8 Q2,42 2,36 V8 Q2,2 8,2 Z"
+        android:strokeColor="@color/c_divider"
+        android:strokeWidth="1.2" />
+    <!-- Tall single card showing full multi-line title -->
+    <path
+        android:fillColor="@color/c_card"
+        android:pathData="M8,7 H56 Q58,7 58,9 V35 Q58,37 56,37 H8 Q6,37 6,35 V9 Q6,7 8,7 Z" />
+    <path
+        android:fillColor="@color/c_text"
+        android:pathData="M10,11.5 H53 V14 H10 Z" />
+    <path
+        android:fillColor="@color/c_text"
+        android:pathData="M10,17 H51 V19.5 H10 Z" />
+    <path
+        android:fillColor="@color/c_text"
+        android:pathData="M10,22.5 H38 V25 H10 Z" />
+    <path
+        android:fillColor="@color/c_accent_soft"
+        android:pathData="M11.5,28.5 H21 Q22.5,28.5 22.5,30 V32 Q22.5,33.5 21,33.5 H11.5 Q10,33.5 10,32 V30 Q10,28.5 11.5,28.5 Z" />
+    <path
+        android:fillColor="@color/c_text2"
+        android:pathData="M25,30 H45 V32 H25 Z" />
+</vector>

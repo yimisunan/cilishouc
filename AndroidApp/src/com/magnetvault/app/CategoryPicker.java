@@ -1,7 +1,6 @@
 package com.magnetvault.app;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -137,6 +136,7 @@ public final class CategoryPicker {
         box.setFocusable(true);
         box.setClickable(true);
         if (onClick != null) box.setOnClickListener(v -> onClick.run());
+        Design.tactile(box);
         return new Card(box, badge, (ImageView) badge.getChildAt(0), title, subtitle);
     }
 
@@ -376,8 +376,8 @@ public final class CategoryPicker {
 
         // Search input pill
         LinearLayout searchWrap = Design.row(host);
-        searchWrap.setBackgroundResource(R.drawable.bg_card_soft);
-        searchWrap.setMinimumHeight(Ui.dp(host, 44));
+        searchWrap.setBackgroundResource(R.drawable.bg_input_box);
+        searchWrap.setMinimumHeight(Ui.dp(host, 46));
         Design.pad(host, searchWrap, 12, 2, 2);
 
         ImageView searchIcon = new ImageView(host);
@@ -411,6 +411,7 @@ public final class CategoryPicker {
         Design.pad(host, clearSearch, 9, 9, 9);
         clearSearch.setVisibility(View.GONE);
         searchWrap.addView(clearSearch);
+        Design.focusWrap(searchWrap, searchInput);
         root.addView(searchWrap);
 
         // Quick-jump banner when already having a nested selection
@@ -455,6 +456,7 @@ public final class CategoryPicker {
                         currentParentKey[0] = initialSelectedNode.parentKey;
                         refreshRef[0].run();
                     });
+            Design.tactile(jumpBanner);
         } else {
             jumpBanner.setVisibility(View.GONE);
         }
@@ -518,6 +520,7 @@ public final class CategoryPicker {
                             LinearLayout card = Design.row(host);
                             card.setMinimumHeight(Ui.dp(host, 58));
                             Design.pad(host, card, 12, 10, 10);
+                            Design.tactile(card);
 
                             FrameLayout badge =
                                     Design.iconBadge(
@@ -947,9 +950,9 @@ public final class CategoryPicker {
                             Ui.dp(host, 640)),
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             w.setGravity(Gravity.BOTTOM);
-            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-            if (android.animation.ValueAnimator.areAnimatorsEnabled())
-                w.setWindowAnimations(android.R.style.Animation_Dialog);
+            Design.allowImeResize(w, false);
+            if (!android.animation.ValueAnimator.areAnimatorsEnabled())
+                w.setWindowAnimations(0);
             w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         }
         dialog.show();
@@ -980,8 +983,7 @@ public final class CategoryPicker {
             final Node currentParent,
             final String prefillName,
             final Listener onCreatedKey) {
-        LinearLayout box = Design.column(host);
-        Design.pad(host, box, 22, 8, 12);
+        LinearLayout root = Ui.sheetContainer(host);
 
         String title;
         if (currentParent == null) {
@@ -989,31 +991,39 @@ public final class CategoryPicker {
         } else {
             title = "在「" + currentParent.name + "」下新建子分类";
         }
+        TextView head = Design.text(host, title, 18, R.color.c_text);
+        head.setTypeface(null, Typeface.BOLD);
+        head.setSingleLine(true);
+        head.setEllipsize(TextUtils.TruncateAt.END);
+        root.addView(head);
 
         if (pathMode) {
-            box.addView(
+            Design.gap(host, root, 6);
+            TextView tip =
                     Design.text(
                             host,
                             currentParent == null
                                     ? "输入分类名，或用 / 输入多级路径（例如：电影 / 科幻）"
                                     : "上级目录：" + currentParent.fullPath + "（支持用 / 再建多级）",
                             13,
-                            R.color.c_text2));
-            Design.gap(host, box, 6);
+                            R.color.c_text2);
+            tip.setBackgroundResource(R.drawable.bg_card_soft);
+            Design.pad(host, tip, 12, 10, 10);
+            root.addView(tip);
         }
 
-        Design.label(host, box, "分类名称");
+        Design.label(host, root, "分类名称");
         EditText input = Design.input(host, pathMode ? "例如：4K 或 科幻 / 4K" : "例如：电影、剧集", false);
         if (!TextUtils.isEmpty(prefillName)) {
             input.setText(prefillName);
             input.setSelection(prefillName.length());
         }
-        box.addView(input);
+        root.addView(input);
 
         final TextView preview = pathMode ? Design.text(host, "", 12, R.color.c_accent) : null;
         if (pathMode) {
-            Design.gap(host, box, 8);
-            box.addView(preview);
+            Design.gap(host, root, 8);
+            root.addView(preview);
             Runnable updatePreview =
                     () -> {
                         String p = buildDraftPath(currentParent, input.getText().toString());
@@ -1036,149 +1046,118 @@ public final class CategoryPicker {
             currentParent != null ? currentParent.color : Ui.COLORS[0]
         };
         if (!pathMode) {
-            Design.label(host, box, "文件夹颜色");
-            LinearLayout colorRow = Design.row(host);
-            final List<FrameLayout> dots = new ArrayList<>();
-            for (int i = 0; i < Ui.COLORS.length; i++) {
-                final int color = Ui.COLORS[i];
-                FrameLayout dot = new FrameLayout(host);
-                int sz = Ui.dp(host, 34);
-                LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(sz, sz);
-                if (i > 0) dp.leftMargin = Ui.dp(host, 8);
-                dot.setLayoutParams(dp);
-                GradientDrawable gd = new GradientDrawable();
-                gd.setShape(GradientDrawable.OVAL);
-                gd.setColor(color);
-                dot.setBackground(gd);
-                ImageView check = new ImageView(host);
-                check.setImageResource(R.drawable.ic_check);
-                check.setColorFilter(Color.WHITE);
-                check.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-                dot.addView(
-                        check,
-                        new FrameLayout.LayoutParams(
-                                Ui.dp(host, 18), Ui.dp(host, 18), Gravity.CENTER));
-                dots.add(dot);
-                dot.setFocusable(true);
-                dot.setClickable(true);
-                dot.setContentDescription("颜色 " + Ui.COLOR_NAMES[i]);
-                dot.setOnClickListener(
-                        v -> {
-                            pickedColor[0] = color;
-                            syncColorDots(dots, pickedColor[0]);
+            Design.label(host, root, "文件夹颜色");
+            root.addView(Design.colorSwatches(host, pickedColor[0], c -> pickedColor[0] = c));
+        }
+
+        TextView errView = Design.text(host, "", 12, R.color.c_danger);
+        errView.setVisibility(View.GONE);
+        Design.pad(host, errView, 4, 8, 0);
+        root.addView(errView);
+
+        Design.gap(host, root, 16);
+        final Dialog[] ref = {null};
+        LinearLayout actions = Design.row(host);
+        Button cancel =
+                Design.button(
+                        host,
+                        "取消",
+                        0,
+                        false,
+                        () -> {
+                            if (ref[0] != null) ref[0].dismiss();
                         });
-                colorRow.addView(dot);
-            }
-            syncColorDots(dots, pickedColor[0]);
-            HorizontalScrollView cs = new HorizontalScrollView(host);
-            cs.setHorizontalScrollBarEnabled(false);
-            cs.addView(colorRow);
-            box.addView(cs);
-        }
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(0, -2, 1);
+        cp.rightMargin = Ui.dp(host, 10);
+        actions.addView(cancel, cp);
 
-        AlertDialog d =
-                new AlertDialog.Builder(host)
-                        .setTitle(title)
-                        .setView(Design.scroll(host, box))
-                        .setNegativeButton("取消", null)
-                        .setPositiveButton(pathMode ? "确定" : "创建并选中", null)
-                        .create();
-        d.setOnShowListener(
-                dlg ->
-                        d.getButton(AlertDialog.BUTTON_POSITIVE)
-                                .setOnClickListener(
-                                        v -> {
-                                            if (pathMode) {
-                                                String fullPath =
-                                                        buildDraftPath(
-                                                                currentParent,
-                                                                input.getText().toString());
-                                                if (fullPath.isEmpty()) {
-                                                    input.setError("请输入分类名称");
-                                                    input.requestFocus();
-                                                    return;
+        final Button[] submitRef = {null};
+        submitRef[0] =
+                Design.button(
+                        host,
+                        pathMode ? "确定" : "创建并选中",
+                        R.drawable.ic_check,
+                        true,
+                        () -> {
+                            errView.setVisibility(View.GONE);
+                            if (pathMode) {
+                                String fullPath =
+                                        buildDraftPath(currentParent, input.getText().toString());
+                                if (fullPath.isEmpty()) {
+                                    errView.setText("请输入分类名称");
+                                    errView.setVisibility(View.VISIBLE);
+                                    input.requestFocus();
+                                    return;
+                                }
+                                Entry test = new Entry();
+                                test.categoryName = fullPath;
+                                String err = ImportDraft.validate(test);
+                                if (err != null) {
+                                    errView.setText(err);
+                                    errView.setVisibility(View.VISIBLE);
+                                    input.requestFocus();
+                                    return;
+                                }
+                                if (ref[0] != null) ref[0].dismiss();
+                                onCreatedKey.onPicked(fullPath);
+                                return;
+                            }
+                            final String name = input.getText().toString().trim();
+                            if (name.isEmpty()) {
+                                errView.setText("请输入分类名称");
+                                errView.setVisibility(View.VISIBLE);
+                                input.requestFocus();
+                                return;
+                            }
+                            final String parentId =
+                                    currentParent == null ? null : currentParent.key;
+                            submitRef[0].setEnabled(false);
+                            AppActivity.DATA.execute(
+                                    () -> {
+                                        String error =
+                                                Repo.addCategory(
+                                                        host.getApplicationContext(),
+                                                        name,
+                                                        pickedColor[0],
+                                                        parentId);
+                                        String createdId = null;
+                                        if (error == null) {
+                                            for (Category c :
+                                                    Repo.categories(
+                                                            host.getApplicationContext(), false)) {
+                                                boolean sameParent =
+                                                        parentId == null
+                                                                ? c.parentId == null
+                                                                : parentId.equals(c.parentId);
+                                                if (sameParent && name.equalsIgnoreCase(c.name)) {
+                                                    createdId = c.id;
+                                                    break;
                                                 }
-                                                Entry test = new Entry();
-                                                test.categoryName = fullPath;
-                                                String err = ImportDraft.validate(test);
-                                                if (err != null) {
-                                                    input.setError(err);
-                                                    input.requestFocus();
-                                                    return;
-                                                }
-                                                d.dismiss();
-                                                onCreatedKey.onPicked(fullPath);
-                                                return;
                                             }
-                                            final String name = input.getText().toString().trim();
-                                            if (name.isEmpty()) {
-                                                input.setError("请输入分类名称");
-                                                input.requestFocus();
-                                                return;
-                                            }
-                                            final String parentId =
-                                                    currentParent == null ? null : currentParent.key;
-                                            d.getButton(AlertDialog.BUTTON_POSITIVE)
-                                                    .setEnabled(false);
-                                            AppActivity.DATA.execute(
-                                                    () -> {
-                                                        String error =
-                                                                Repo.addCategory(
-                                                                        host.getApplicationContext(),
-                                                                        name,
-                                                                        pickedColor[0],
-                                                                        parentId);
-                                                        String createdId = null;
-                                                        if (error == null) {
-                                                            for (Category c :
-                                                                    Repo.categories(
-                                                                            host.getApplicationContext(),
-                                                                            false)) {
-                                                                boolean sameParent =
-                                                                        parentId == null
-                                                                                ? c.parentId == null
-                                                                                : parentId.equals(
-                                                                                        c.parentId);
-                                                                if (sameParent
-                                                                        && name.equalsIgnoreCase(
-                                                                                c.name)) {
-                                                                    createdId = c.id;
-                                                                    break;
-                                                                }
-                                                            }
-                                                        }
-                                                        final String errOut = error;
-                                                        final String idOut = createdId;
-                                                        AppActivity.MAIN.post(
-                                                                () -> {
-                                                                    if (host.isFinishing()
-                                                                            || host.isDestroyed())
-                                                                        return;
-                                                                    d.getButton(
-                                                                                    AlertDialog
-                                                                                            .BUTTON_POSITIVE)
-                                                                            .setEnabled(true);
-                                                                    if (errOut != null) {
-                                                                        input.setError(errOut);
-                                                                        return;
-                                                                    }
-                                                                    d.dismiss();
-                                                                    Ui.toast(host, "已创建「" + name + "」");
-                                                                    onCreatedKey.onPicked(idOut);
-                                                                });
-                                                    });
-                                        }));
-        d.show();
-    }
+                                        }
+                                        final String errOut = error;
+                                        final String idOut = createdId;
+                                        AppActivity.MAIN.post(
+                                                () -> {
+                                                    if (host.isFinishing() || host.isDestroyed())
+                                                        return;
+                                                    submitRef[0].setEnabled(true);
+                                                    if (errOut != null) {
+                                                        errView.setText(errOut);
+                                                        errView.setVisibility(View.VISIBLE);
+                                                        return;
+                                                    }
+                                                    if (ref[0] != null) ref[0].dismiss();
+                                                    Ui.toast(host, "已创建「" + name + "」");
+                                                    onCreatedKey.onPicked(idOut);
+                                                });
+                                    });
+                        });
+        actions.addView(submitRef[0], new LinearLayout.LayoutParams(0, -2, 1.4f));
+        root.addView(actions);
 
-    private static void syncColorDots(List<FrameLayout> dots, int selectedColor) {
-        for (int i = 0; i < dots.size() && i < Ui.COLORS.length; i++) {
-            boolean on = Ui.COLORS[i] == selectedColor;
-            FrameLayout dot = dots.get(i);
-            dot.getChildAt(0).setVisibility(on ? View.VISIBLE : View.GONE);
-            dot.setScaleX(on ? 1.12f : 1f);
-            dot.setScaleY(on ? 1.12f : 1f);
-        }
+        ref[0] = Ui.showSheet(host, root, true);
+        input.requestFocus();
     }
 
     private static String buildDraftPath(Node currentParent, String rawInput) {
