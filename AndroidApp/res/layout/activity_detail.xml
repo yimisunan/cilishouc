@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:ns0="http://schemas.android.com/apk/res/android" ns0:layout_width="match_parent" ns0:layout_height="match_parent" ns0:background="@color/c_bg" ns0:orientation="vertical">
+    <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:background="@drawable/bg_header" ns0:gravity="center_vertical" ns0:orientation="horizontal" ns0:paddingTop="8dp" ns0:paddingBottom="8dp">
+        <ImageView ns0:id="@+id/btn_back" ns0:layout_width="48dp" ns0:layout_height="48dp" ns0:padding="12dp" ns0:src="@drawable/ic_back" ns0:tint="@color/c_header_text" ns0:background="?android:attr/selectableItemBackgroundBorderless" ns0:contentDescription="返回" ns0:minHeight="48dp" ns0:focusable="true" />
+        <ImageView ns0:layout_width="20dp" ns0:layout_height="20dp" ns0:src="@drawable/ic_cat" ns0:tint="@color/c_accent" ns0:importantForAccessibility="no" />
+        <TextView ns0:layout_width="0dp" ns0:layout_height="wrap_content" ns0:layout_marginLeft="8dp" ns0:layout_weight="1" ns0:letterSpacing="0" ns0:text="收藏详情" ns0:textColor="@color/c_header_text" ns0:textSize="16sp" ns0:textStyle="bold" />
+        <ImageView ns0:id="@+id/btn_edit" ns0:layout_width="48dp" ns0:layout_height="48dp" ns0:padding="12dp" ns0:src="@drawable/ic_edit" ns0:tint="@color/c_accent" ns0:background="?android:attr/selectableItemBackgroundBorderless" ns0:contentDescription="编辑收藏" ns0:minHeight="48dp" ns0:focusable="true" />
+    </LinearLayout>
+    <ScrollView ns0:layout_width="match_parent" ns0:layout_height="0dp" ns0:layout_weight="1" ns0:scrollbars="none">
+        <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:orientation="vertical" ns0:paddingLeft="14dp" ns0:paddingRight="14dp" ns0:paddingTop="12dp">
+            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
+                <TextView ns0:id="@+id/tv_title" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:textColor="@color/c_text" ns0:textSize="22sp" ns0:textStyle="bold" />
+                <TextView ns0:id="@+id/tv_meta" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+            </LinearLayout>
+            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="16dp" ns0:orientation="horizontal">
+                <TextView ns0:id="@+id/btn_copy" ns0:layout_width="0dp" ns0:layout_height="64dp" ns0:layout_marginRight="8dp" ns0:layout_weight="1" ns0:background="@drawable/bg_btn_ghost" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_accent" ns0:drawableTop="@drawable/ic_copy" ns0:gravity="center" ns0:text="复制" ns0:textColor="@color/c_text" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
+                <TextView ns0:id="@+id/btn_share" ns0:layout_width="0dp" ns0:layout_height="64dp" ns0:layout_marginRight="8dp" ns0:layout_weight="1" ns0:background="@drawable/bg_btn_ghost" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_accent" ns0:drawableTop="@drawable/ic_open" ns0:gravity="center" ns0:text="分享" ns0:textColor="@color/c_text" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
+                <TextView ns0:id="@+id/btn_open" ns0:layout_width="0dp" ns0:layout_height="64dp" ns0:layout_weight="1" ns0:background="@drawable/bg_btn" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_accent" ns0:drawableTop="@drawable/ic_play" ns0:gravity="center" ns0:text="打开" ns0:textColor="@color/c_accent" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
+            </LinearLayout>
+            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
+                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:gravity="center_vertical" ns0:orientation="horizontal">
+                    <ImageView ns0:layout_width="14dp" ns0:layout_height="14dp" ns0:src="@drawable/ic_tag" ns0:tint="@color/c_accent2" ns0:importantForAccessibility="no" />
+                    <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginLeft="7dp" ns0:text="标签" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+                </LinearLayout>
+                <TextView ns0:id="@+id/tv_tags" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text" ns0:textSize="13sp" />
+                <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:text="备注" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+                <TextView ns0:id="@+id/tv_note" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text" ns0:textSize="13sp" />
+            </LinearLayout>
+            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
+                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:gravity="center_vertical" ns0:orientation="horizontal">
+                    <ImageView ns0:layout_width="14dp" ns0:layout_height="14dp" ns0:src="@drawable/ic_link" ns0:tint="@color/c_accent" ns0:importantForAccessibility="no" />
+                    <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginLeft="7dp" ns0:text="来源" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+                </LinearLayout>
+                <TextView ns0:id="@+id/tv_source" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="8dp" ns0:background="@drawable/bg_source_chip" ns0:padding="10dp" ns0:textColor="@color/c_accent" ns0:textIsSelectable="false" ns0:textSize="13sp" />
+            </LinearLayout>
+            <TextView ns0:id="@+id/detail_advanced" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:minHeight="52dp" ns0:padding="16dp" ns0:layout_marginTop="16dp" ns0:text="查看链接与技术信息" ns0:textColor="@color/c_accent" ns0:textSize="15sp" ns0:background="@drawable/bg_btn" ns0:focusable="true" />
+            <LinearLayout ns0:id="@+id/detail_raw" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:orientation="vertical" ns0:visibility="gone">
+                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
+                    <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:gravity="center_vertical" ns0:orientation="horizontal">
+                        <ImageView ns0:layout_width="15dp" ns0:layout_height="15dp" ns0:src="@drawable/ic_magnet" ns0:tint="@color/c_accent" ns0:importantForAccessibility="no" />
+                        <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginLeft="7dp" ns0:letterSpacing="0" ns0:id="@+id/link_type_label" ns0:text="磁力链接" ns0:textColor="@color/c_accent" ns0:textSize="13sp" />
+                    </LinearLayout>
+                    <TextView ns0:id="@+id/tv_magnet" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="8dp" ns0:background="@drawable/bg_card_soft" ns0:padding="10dp" ns0:textColor="@color/c_text" ns0:textIsSelectable="true" ns0:textSize="13sp" />
+                </LinearLayout>
+                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
+                    <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:letterSpacing="0" ns0:id="@+id/hash_type_label" ns0:text="INFO HASH" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+                    <TextView ns0:id="@+id/tv_hash" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text" ns0:textIsSelectable="true" ns0:textSize="13sp" />
+                </LinearLayout>
+            </LinearLayout>
+            <TextView ns0:id="@+id/btn_delete" ns0:layout_width="match_parent" ns0:layout_height="54dp" ns0:layout_marginTop="10dp" ns0:background="@drawable/bg_danger" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_danger" ns0:drawableLeft="@drawable/ic_trash" ns0:gravity="center" ns0:text="删除（移入回收站）" ns0:textColor="@color/c_danger" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
+            <View ns0:layout_width="match_parent" ns0:layout_height="26dp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

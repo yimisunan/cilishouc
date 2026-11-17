@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">磁力收藏夹</string>
+    <string name="search_hint">搜索标题 / Hash / 链接 / 标签 / 备注</string>
+    <string name="empty_hint">还没有收藏\n点右下角 + 添加第一条磁力链接</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+</resources>

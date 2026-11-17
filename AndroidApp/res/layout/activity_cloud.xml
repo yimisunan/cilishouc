@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/c_bg" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_header" android:gravity="center_vertical" android:orientation="horizontal" android:paddingTop="8dp" android:paddingBottom="8dp">
+        <ImageView android:id="@+id/btn_back" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_back" android:tint="@color/c_header_text" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="返回" android:minHeight="48dp" android:focusable="true" />
+        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_cloud" android:tint="@color/c_accent" android:importantForAccessibility="no" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:layout_weight="1" android:letterSpacing="0" android:text="云端备份" android:textColor="@color/c_header_text" android:textSize="16sp" android:textStyle="bold" />
+        <ImageView android:id="@+id/btn_refresh" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_restore" android:tint="@color/c_accent" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="刷新" android:minHeight="48dp" android:focusable="true" />
+    </LinearLayout>
+    <TextView android:id="@+id/tv_summary" style="@style/CardPanel" android:layout_marginTop="12dp" android:lineSpacingExtra="4dp" android:textColor="@color/c_text2" android:textSize="13sp" />
+    <TextView android:id="@+id/btn_backup" style="@style/PrimaryButton" android:layout_marginTop="12dp" android:drawableLeft="@drawable/ic_import" android:drawablePadding="8dp" android:drawableTint="@color/c_accent" android:text="立即备份到坚果云" android:minHeight="48dp" android:focusable="true" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <TextView android:id="@+id/tv_empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="50dp" android:drawablePadding="14dp" android:drawableTop="@drawable/ic_cat_silhouette" android:gravity="center" android:lineSpacingExtra="5dp" android:text="云端还没有备份\n点上面的按钮上传第一份" android:textColor="@color/c_text2" android:textSize="13sp" android:visibility="gone" />
+        <ListView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="10dp" android:clipToPadding="false" android:divider="@null" android:paddingBottom="12dp" android:scrollbars="none" />
+    </FrameLayout>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="18dp" android:layout_marginRight="18dp" android:layout_marginBottom="10dp" android:lineSpacingExtra="4dp" android:text="备份为客户端加密的 .mjbf 密文，坚果云只能看到密文。上传成功后会回读校验大小，不一致则判定失败。" android:textColor="@color/c_text2" android:textSize="13sp" />
+</LinearLayout>

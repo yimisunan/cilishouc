@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingLeft="12dp" android:paddingRight="12dp" android:paddingTop="3dp" android:paddingBottom="3dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_card" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="10dp" android:paddingRight="4dp" android:paddingTop="12dp" android:paddingBottom="12dp">
+        <View android:id="@+id/dot" android:layout_width="3dp" android:layout_height="28dp" android:layout_marginRight="10dp" android:background="@drawable/bg_accent_bar" />
+        <ImageView android:layout_width="17dp" android:layout_height="17dp" android:layout_marginRight="9dp" android:src="@drawable/ic_folder" android:tint="@color/c_accent2" android:importantForAccessibility="no" />
+        <TextView android:id="@+id/cat_name" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textColor="@color/c_text" android:textSize="14sp" />
+        <TextView android:id="@+id/cat_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="@color/c_text2" android:textSize="13sp" />
+        <ImageView android:id="@+id/cat_delete" android:layout_width="48dp" android:layout_height="48dp" android:padding="10dp" android:src="@drawable/ic_trash" android:tint="@color/c_danger" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="更多操作" android:minHeight="48dp" android:focusable="true" />
+    </LinearLayout>
+</LinearLayout>

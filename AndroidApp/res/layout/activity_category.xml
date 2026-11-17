@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/c_bg" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_header" android:gravity="center_vertical" android:orientation="horizontal" android:paddingTop="8dp" android:paddingBottom="8dp">
+        <ImageView android:id="@+id/btn_back" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_back" android:tint="@color/c_header_text" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="返回" android:minHeight="48dp" android:focusable="true" />
+        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_cat" android:tint="@color/c_accent" android:importantForAccessibility="no" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:letterSpacing="0" android:text="分类管理" android:textColor="@color/c_header_text" android:textSize="16sp" android:textStyle="bold" />
+            <TextView android:id="@+id/subtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="点条目标签可改名" android:textColor="@color/c_text2" android:textSize="13sp" />
+        </LinearLayout>
+        <ImageView android:id="@+id/btn_add" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_add" android:tint="@color/c_accent" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="新建" android:minHeight="48dp" android:focusable="true" />
+    </LinearLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="60dp" android:drawablePadding="14dp" android:drawableTop="@drawable/ic_cat_silhouette" android:gravity="center" android:lineSpacingExtra="6dp" android:text="还没有分类\n点右上角 + 建一个" android:textColor="@color/c_text2" android:textSize="13sp" android:visibility="gone" />
+        <ListView android:id="@+id/list" android:layout_width="match_parent" android:layout_height="match_parent" android:clipToPadding="false" android:divider="@null" android:paddingTop="8dp" android:paddingBottom="24dp" android:scrollbars="none" />
+    </FrameLayout>
+</LinearLayout>

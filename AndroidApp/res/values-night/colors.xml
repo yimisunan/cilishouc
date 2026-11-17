@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="c_bg">#101B1A</color>
+    <color name="c_card">#1B2A28</color>
+    <color name="c_card2">#152320</color>
+    <color name="c_text">#E6F1ED</color>
+    <color name="c_text2">#AEC2BA</color>
+    <color name="c_divider">#30453D</color>
+    <color name="c_line">#4D685D</color>
+    <color name="c_header">#101B1A</color>
+    <color name="c_header_text">#E6F1ED</color>
+    <color name="c_header_sub">#AEC2BA</color>
+    <color name="c_chip_bg">#22362E</color>
+    <color name="c_chip_stroke">#4D685D</color>
+    <color name="c_chip_text">#BCD1C7</color>
+    <color name="c_accent">#85DAB6</color>
+    <color name="c_accent2">#C5B9F0</color>
+    <color name="c_accent_soft">#244B3C</color>
+    <color name="c_danger">#FFABB3</color>
+    <color name="c_star">#EEC87C</color>
+    <color name="c_search_bg">#22352E</color>
+    <color name="c_on_accent">#102B20</color>
+    <color name="c_pressed">#3385DAB6</color>
+</resources>

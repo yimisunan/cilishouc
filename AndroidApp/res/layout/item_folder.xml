@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingLeft="12dp" android:paddingRight="12dp" android:paddingTop="3dp" android:paddingBottom="3dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_card" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="10dp" android:paddingRight="8dp" android:paddingTop="10dp" android:paddingBottom="10dp">
+        <TextView android:id="@+id/folder_icon" android:layout_width="32dp" android:layout_height="32dp" android:layout_marginRight="10dp" android:background="@drawable/bg_icon_chip" android:gravity="center" android:text="" android:textColor="@color/c_accent" android:textSize="15sp" />
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+            <TextView android:id="@+id/folder_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:ellipsize="end" android:maxLines="1" android:textColor="@color/c_text" android:textSize="14sp" />
+            <TextView android:id="@+id/folder_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp" android:ellipsize="end" android:maxLines="1" android:textColor="@color/c_text2" android:textSize="11sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/folder_chev" android:layout_width="24dp" android:layout_height="32dp" android:gravity="center" android:text="›" android:textColor="@color/c_text2" android:textSize="18sp" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/c_bg" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_header" android:gravity="center_vertical" android:orientation="horizontal" android:paddingTop="8dp" android:paddingBottom="8dp">
+        <ImageView android:id="@+id/btn_back" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_back" android:tint="@color/c_header_text" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="返回" android:minHeight="48dp" android:focusable="true" />
+        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_settings" android:tint="@color/c_accent" android:importantForAccessibility="no" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:layout_weight="1" android:letterSpacing="0" android:text="设置" android:textColor="@color/c_header_text" android:textSize="16sp" android:textStyle="bold" />
+    </LinearLayout>
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:scrollbars="none">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="24dp">
+            <TextView style="@style/SectionLabel" android:drawableLeft="@drawable/ic_cat" android:drawableTint="@color/c_accent" android:text="外观" />
+            <TextView android:id="@+id/row_theme" style="@style/CardRow" android:drawableLeft="@drawable/ic_settings" android:drawableTint="@color/c_accent" android:text="主题" android:minHeight="48dp" android:focusable="true" />
+            <TextView android:id="@+id/row_trash" style="@style/CardRow" android:drawableLeft="@drawable/ic_trash" android:drawableTint="@color/c_accent" android:layout_marginTop="6dp" android:text="回收站保留天数" android:minHeight="48dp" android:focusable="true" />
+            <TextView style="@style/SectionLabel" android:drawableLeft="@drawable/ic_magnet" android:drawableTint="@color/c_accent2" android:text="数据" />
+            <TextView android:id="@+id/tv_stats" style="@style/CardPanel" android:lineSpacingExtra="4dp" android:textColor="@color/c_text" android:textSize="13sp" />
+            <TextView style="@style/SectionLabel" android:drawableLeft="@drawable/ic_lock" android:drawableTint="@color/c_accent" android:text="加密备份（本地文件）" />
+            <TextView android:id="@+id/tv_pwd_status" style="@style/CardPanel" android:lineSpacingExtra="4dp" android:textColor="@color/c_text2" android:textSize="13sp" />
+            <TextView android:id="@+id/row_pwd" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_lock" android:drawableTint="@color/c_accent" android:text="设置 / 修改备份密码" android:minHeight="48dp" android:focusable="true" />
+            <TextView android:id="@+id/row_export" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_import" android:drawableTint="@color/c_accent" android:text="导出加密备份到文件" android:minHeight="48dp" android:focusable="true" />
+            <TextView android:id="@+id/row_restore" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_restore" android:drawableTint="@color/c_accent" android:text="从备份文件恢复" android:minHeight="48dp" android:focusable="true" />
+            <TextView android:id="@+id/row_rollback" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_history" android:drawableTint="@color/c_text2" android:text="回滚到最近恢复前快照" android:minHeight="48dp" android:focusable="true" />
+            <TextView style="@style/SectionLabel" android:drawableLeft="@drawable/ic_cloud" android:drawableTint="@color/c_accent" android:text="坚果云备份（WebDAV）" />
+            <TextView android:id="@+id/tv_dav_status" style="@style/CardPanel" android:lineSpacingExtra="4dp" android:textColor="@color/c_text2" android:textSize="13sp" />
+            <TextView android:id="@+id/row_dav" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_link" android:drawableTint="@color/c_accent" android:text="连接设置与测试" android:minHeight="48dp" android:focusable="true" />
+            <TextView android:id="@+id/row_cloud" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_cloud" android:drawableTint="@color/c_accent" android:text="云端备份（上传 / 管理）" android:minHeight="48dp" android:focusable="true" />
+            <TextView android:id="@+id/row_auto_backup" style="@style/CardRow" android:layout_marginTop="6dp" android:drawableLeft="@drawable/ic_check" android:drawableTint="@color/c_accent" android:text="每日自动备份 · 关闭" android:minHeight="48dp" android:focusable="true" />
+            <TextView style="@style/SectionLabel" android:drawableLeft="@drawable/ic_history" android:drawableTint="@color/c_text2" android:text="最近记录" />
+            <TextView android:id="@+id/tv_audit" style="@style/CardPanel" android:lineSpacingExtra="4dp" android:textColor="@color/c_text" android:textSize="13sp" />
+            <TextView android:id="@+id/tv_note" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="18dp" android:layout_marginRight="18dp" android:layout_marginTop="14dp" android:lineSpacingExtra="5dp" android:textColor="@color/c_text2" android:textSize="13sp" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
