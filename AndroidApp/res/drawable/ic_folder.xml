@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-  <path android:fillColor="#FFFFFFFF" android:pathData="M3,6.4 h6.2 l2,2.2 H21 v11.2 H3 Z" />
+<!-- Generated from ic_folder.svg; edit the SVG source and re-run svg2vd.py -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M3.25 7.25c0-1.1.9-2 2-2h4.1c.5 0 .98.2 1.33.55l1.62 1.7h6.45c1.1 0 2 .9 2 2v8.25c0 1.1-.9 2-2 2H5.25c-1.1 0-2-.9-2-2z"
+        android:fillColor="#FFFFFFFF" />
 </vector>

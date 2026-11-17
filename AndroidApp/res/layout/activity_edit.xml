@@ -1,26 +1,244 @@
-<?xml version='1.0' encoding='utf-8'?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/c_bg" android:orientation="vertical">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@drawable/bg_header" android:gravity="center_vertical" android:orientation="horizontal" android:paddingTop="8dp" android:paddingBottom="8dp">
-        <ImageView android:id="@+id/btn_back" android:layout_width="48dp" android:layout_height="48dp" android:padding="12dp" android:src="@drawable/ic_back" android:tint="@color/c_header_text" android:background="?android:attr/selectableItemBackgroundBorderless" android:contentDescription="返回" android:minHeight="48dp" android:focusable="true" />
-        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_cat" android:tint="@color/c_accent" android:importantForAccessibility="no" />
-        <TextView android:id="@+id/header_title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginLeft="8dp" android:layout_weight="1" android:letterSpacing="0" android:text="新增收藏" android:textColor="@color/c_header_text" android:textSize="16sp" android:textStyle="bold" />
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/c_bg"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:background="@drawable/bg_header"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="返回"
+            android:focusable="true"
+            android:padding="12dp"
+            android:src="@drawable/ic_back"
+            android:tint="@color/c_text" />
+
+        <TextView
+            android:id="@+id/header_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:layout_weight="1"
+            android:text="新增收藏"
+            android:textColor="@color/c_header_text"
+            android:textSize="18sp"
+            android:textStyle="bold" />
     </LinearLayout>
-    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:scrollbars="none">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="26dp">
-            <TextView style="@style/FieldLabel" android:drawableLeft="@drawable/ic_magnet" android:drawablePadding="6dp" android:drawableTint="@color/c_accent" android:text="收藏链接" />
-            <EditText android:id="@+id/input_magnet" style="@style/FieldInput" android:gravity="top" android:hint="粘贴一条 magnet: 或 ed2k: 文件链接" android:inputType="textMultiLine" android:minLines="3" android:contentDescription="收藏链接，支持磁力或 ED2K，必填" />
-            <TextView android:id="@+id/parse_hint" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="18dp" android:layout_marginRight="18dp" android:layout_marginTop="6dp" android:text="" android:textColor="@color/c_text2" android:textSize="13sp" />
-            <TextView style="@style/FieldLabel" android:drawableLeft="@drawable/ic_edit" android:drawablePadding="6dp" android:drawableTint="@color/c_accent2" android:text="标题（可选）" />
-            <EditText android:id="@+id/input_title" style="@style/FieldInput" android:hint="给它起个容易找到的名字" android:inputType="text" android:maxLines="3" android:contentDescription="收藏标题" />
-            <TextView style="@style/FieldLabel" android:drawableLeft="@drawable/ic_folder" android:drawablePadding="6dp" android:drawableTint="@color/c_accent2" android:text="分类" />
-            <Spinner android:id="@+id/input_category" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginLeft="14dp" android:layout_marginRight="14dp" />
-            <TextView style="@style/FieldLabel" android:drawableLeft="@drawable/ic_tag" android:drawablePadding="6dp" android:drawableTint="@color/c_accent2" android:text="标签（点选，可多选）" />
-            <EditText android:id="@+id/input_tags" style="@style/FieldInput" android:hint="选择或新建标签" android:inputType="text" android:maxLines="3" android:contentDescription="选择标签" />
-            <TextView style="@style/FieldLabel" android:drawableLeft="@drawable/ic_edit" android:drawablePadding="6dp" android:drawableTint="@color/c_text2" android:text="备注" />
-            <EditText android:id="@+id/input_note" style="@style/FieldInput" android:hint="可选" android:inputType="textMultiLine" android:minLines="2" />
-            <TextView style="@style/FieldLabel" android:drawableLeft="@drawable/ic_link" android:drawablePadding="6dp" android:drawableTint="@color/c_accent" android:text="来源（可选，可填网址）" />
-            <EditText android:id="@+id/input_source" style="@style/FieldInput" android:hint="例如：https://… 或 朋友推荐" android:inputType="text" android:maxLines="1" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="14dp"
+                android:layout_marginBottom="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:drawableLeft="@drawable/ic_magnet"
+                    android:drawablePadding="6dp"
+                    android:drawableTint="@color/c_accent"
+                    android:text="收藏链接"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btn_paste"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_pill_on"
+                    android:drawableLeft="@drawable/ic_paste"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="@color/c_accent"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingLeft="11dp"
+                    android:paddingRight="12dp"
+                    android:text="从剪贴板粘贴"
+                    android:textColor="@color/c_accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/input_magnet"
+                style="@style/FieldInput"
+                android:contentDescription="收藏链接，支持磁力或 ED2K，必填"
+                android:fontFamily="monospace"
+                android:gravity="top"
+                android:hint="粘贴一条 magnet: 或 ed2k: 文件链接"
+                android:inputType="textMultiLine"
+                android:minLines="3"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/parse_hint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="18dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginRight="18dp"
+                android:text=""
+                android:textColor="@color/c_text2"
+                android:textSize="12sp" />
+
+            <TextView
+                style="@style/FieldLabel"
+                android:drawableLeft="@drawable/ic_edit"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/c_accent2"
+                android:text="标题（可选，留空自动提取）"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/input_title"
+                style="@style/FieldInput"
+                android:contentDescription="收藏标题"
+                android:hint="给它起个容易找到的名字"
+                android:inputType="text"
+                android:maxLines="3" />
+
+            <TextView
+                style="@style/FieldLabel"
+                android:drawableLeft="@drawable/ic_folder"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/c_accent2"
+                android:text="分类"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="14dp"
+                android:layout_marginRight="14dp"
+                android:background="@drawable/bg_card"
+                android:paddingLeft="6dp"
+                android:paddingRight="6dp">
+
+                <Spinner
+                    android:id="@+id/input_category"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/FieldLabel"
+                android:drawableLeft="@drawable/ic_tag"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/c_accent2"
+                android:text="标签（点选，可多选）"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/tag_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="14dp"
+                android:layout_marginRight="14dp"
+                android:background="@drawable/bg_card"
+                android:clickable="true"
+                android:focusable="true"
+                android:minHeight="52dp"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <com.magnetvault.app.ChipFlow
+                    android:id="@+id/tag_flow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/FieldLabel"
+                android:drawableLeft="@drawable/ic_edit"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/c_text2"
+                android:text="备注"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/input_note"
+                style="@style/FieldInput"
+                android:gravity="top"
+                android:hint="可选"
+                android:inputType="textMultiLine"
+                android:minLines="2" />
+
+            <TextView
+                style="@style/FieldLabel"
+                android:drawableLeft="@drawable/ic_link"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/c_accent"
+                android:text="来源（可选，可填网址）"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/input_source"
+                style="@style/FieldInput"
+                android:hint="例如：https://… 或 朋友推荐"
+                android:inputType="text"
+                android:maxLines="1" />
         </LinearLayout>
     </ScrollView>
-    <TextView android:id="@+id/btn_save" style="@style/PrimaryButton" android:layout_marginTop="8dp" android:drawableLeft="@drawable/ic_check" android:drawablePadding="8dp" android:drawableTint="@color/c_accent" android:text="@string/save" android:layout_marginBottom="12dp" android:minHeight="48dp" android:focusable="true" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="14dp"
+        android:paddingTop="8dp"
+        android:paddingRight="14dp"
+        android:paddingBottom="14dp">
+
+        <TextView
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_fab"
+            android:drawableLeft="@drawable/ic_check"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/c_on_accent"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingLeft="24dp"
+            android:paddingRight="24dp"
+            android:text="@string/save"
+            android:textColor="@color/c_on_accent"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>

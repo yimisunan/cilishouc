@@ -34,12 +34,12 @@ public class EditActivity extends AppActivity {
 
     private EditText inputMagnet;
     private EditText inputTitle;
-    private EditText inputTags;
     private EditText inputNote;
     private EditText inputSource;
     private TextView parseHint;
     private TextView headerTitle;
     private Spinner spinner;
+    private ChipFlow tagFlow;
 
     /** 已选标签（点选式，不再手打） */
     private final List<String> pickedTags = new ArrayList<>();
@@ -51,27 +51,24 @@ public class EditActivity extends AppActivity {
 
         inputMagnet = findViewById(R.id.input_magnet);
         inputTitle = findViewById(R.id.input_title);
-        inputTags = findViewById(R.id.input_tags);
+        tagFlow = findViewById(R.id.tag_flow);
         inputNote = findViewById(R.id.input_note);
         inputSource = findViewById(R.id.input_source);
         parseHint = findViewById(R.id.parse_hint);
         headerTitle = findViewById(R.id.header_title);
         spinner = findViewById(R.id.input_category);
 
-        findViewById(R.id.btn_back)
+        findViewById(R.id.btn_back).setOnClickListener(v -> onBackPressed());
+        findViewById(R.id.btn_save).setOnClickListener(v -> doSave());
+        findViewById(R.id.btn_paste)
                 .setOnClickListener(
-                        new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                onBackPressed();
-                            }
-                        });
-        findViewById(R.id.btn_save)
-                .setOnClickListener(
-                        new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                doSave();
+                        v -> {
+                            String clip = ClipImporter.readClipboard(EditActivity.this);
+                            if (clip.trim().isEmpty()) {
+                                Ui.toast(EditActivity.this, "剪贴板为空");
+                            } else {
+                                inputMagnet.setText(clip.trim());
+                                inputMagnet.setSelection(inputMagnet.getText().length());
                             }
                         });
 
@@ -93,7 +90,6 @@ public class EditActivity extends AppActivity {
             inputTitle.setText(existing.title);
             pickedTags.clear();
             pickedTags.addAll(existing.tags);
-            refreshTagField();
             inputNote.setText(existing.note);
             inputSource.setText(existing.source);
             selectCategory(existing.categoryId);
@@ -104,29 +100,22 @@ public class EditActivity extends AppActivity {
                 selectCategory(def);
             }
         }
+        refreshTagField();
 
         // 标签：点击弹出选择器，而不是让你手打
-        inputTags.setFocusable(false);
-        inputTags.setCursorVisible(false);
-        inputTags.setLongClickable(false);
-        inputTags.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
+        Runnable openTags =
+                () ->
                         TagPicker.show(
                                 EditActivity.this,
                                 "选择标签",
                                 pickedTags,
-                                new TagPicker.Listener() {
-                                    @Override
-                                    public void onPicked(List<String> tags) {
-                                        pickedTags.clear();
-                                        pickedTags.addAll(tags);
-                                        refreshTagField();
-                                    }
+                                tags -> {
+                                    pickedTags.clear();
+                                    pickedTags.addAll(tags);
+                                    refreshTagField();
                                 });
-                    }
-                });
+        findViewById(R.id.tag_card).setOnClickListener(v -> openTags.run());
+        tagFlow.setOnClickListener(v -> openTags.run());
 
         inputMagnet.addTextChangedListener(
                 new TextWatcher() {
@@ -284,19 +273,24 @@ public class EditActivity extends AppActivity {
     }
 
     private void refreshTagField() {
-        if (pickedTags.isEmpty()) {
-            inputTags.setText("");
-            inputTags.setHint("点击选择标签");
-        } else {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < pickedTags.size(); i++) {
-                if (i > 0) {
-                    sb.append("，");
-                }
-                sb.append(pickedTags.get(i));
-            }
-            inputTags.setText(sb.toString());
+        tagFlow.removeAllViews();
+        Runnable openTags =
+                () ->
+                        TagPicker.show(
+                                EditActivity.this,
+                                "选择标签",
+                                pickedTags,
+                                tags -> {
+                                    pickedTags.clear();
+                                    pickedTags.addAll(tags);
+                                    refreshTagField();
+                                });
+        for (String tag : pickedTags) {
+            tagFlow.addView(Design.tagChip(this, "# " + tag, false, openTags));
         }
+        tagFlow.addView(
+                Design.tagChip(
+                        this, pickedTags.isEmpty() ? "+ 选择或新建标签" : "+ 调整标签", true, openTags));
     }
 
     private String snapshot() {

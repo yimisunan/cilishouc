@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from ill_empty_trash.svg; edit the SVG source and re-run svg2vd.py -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="140dp"
+    android:viewportWidth="140"
+    android:viewportHeight="140">
+    <path
+        android:pathData="M18,72 a52,52 0 1,0 104,0 a52,52 0 1,0 -104,0 Z"
+        android:fillColor="@color/c_card2" />
+    <path
+        android:pathData="M44 50h52l-4 48c-.4 4.2-3.9 7.5-8.1 7.5H56.1c-4.2 0-7.7-3.3-8.1-7.5z"
+        android:fillColor="@color/c_card"
+        android:strokeColor="@color/c_line"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M38 48h64"
+        android:strokeColor="@color/c_text2"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M58 48v-5c0-2.2 1.8-4 4-4h16c2.2 0 4 1.8 4 4v5"
+        android:strokeColor="@color/c_text2"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M61 64v26M70 64v26M79 64v26"
+        android:strokeColor="@color/c_divider"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M95,38 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0 Z"
+        android:fillColor="@color/c_accent_soft" />
+    <path
+        android:pathData="M100 38l3 3 5.5-5.5"
+        android:strokeColor="@color/c_accent"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

@@ -27,7 +27,7 @@ public class MainActivity extends AppActivity {
     private List<Entry> entries = new ArrayList<>();
     private Map<String, Integer> tags = new LinkedHashMap<>();
     private int total, trash, unfiled, starred;
-    private LinearLayout root, toolbar, header, nav, batch;
+    private LinearLayout root, toolbar, header, nav, batch, fab;
     private ListView list;
     private RowAdapter adapter;
     private String positionKey;
@@ -63,22 +63,46 @@ public class MainActivity extends AppActivity {
         body.addView(toolbar);
         list = new ListView(this);
         list.setDivider(null);
+        list.setDividerHeight(0);
         list.setClipToPadding(false);
-        Design.pad(this, list, 0, 0, 12);
+        Design.pad(this, list, 0, 4, 92);
         list.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
         header = Design.column(this);
         list.addHeaderView(header, null, false);
         adapter = new RowAdapter();
         list.setAdapter(adapter);
         body.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
+
+        // Floating pill FAB inside centered container
+        fab = buildFab();
+        FrameLayout.LayoutParams fabLp = new FrameLayout.LayoutParams(-2, Ui.dp(this, 52));
+        fabLp.gravity = Gravity.BOTTOM | Gravity.END;
+        fabLp.rightMargin = Ui.dp(this, 18);
+        fabLp.bottomMargin = Ui.dp(this, 16);
+        centered.addView(fab, fabLp);
+
+        // Floating batch selection bar
         batch = Design.row(this);
-        Design.pad(this, batch, 12, 4, 4);
+        batch.setBackgroundResource(R.drawable.bg_batch);
+        batch.setElevation(Ui.dp(this, 8));
+        Design.pad(this, batch, 8, 6, 6);
         batch.setVisibility(View.GONE);
-        body.addView(batch);
+        FrameLayout.LayoutParams batchLp = new FrameLayout.LayoutParams(-1, -2);
+        batchLp.gravity = Gravity.BOTTOM;
+        batchLp.leftMargin = Ui.dp(this, 14);
+        batchLp.rightMargin = Ui.dp(this, 14);
+        batchLp.bottomMargin = Ui.dp(this, 12);
+        centered.addView(batch, batchLp);
+
         root.addView(centered, new LinearLayout.LayoutParams(-1, 0, 1));
+
+        View navDivider = new View(this);
+        navDivider.setBackgroundColor(Design.color(this, R.color.c_divider));
+        root.addView(navDivider, new LinearLayout.LayoutParams(-1, Ui.dp(this, 1)));
+
         nav = Design.row(this);
-        Design.pad(this, nav, 8, 2, 2);
-        nav.setBackgroundColor(Design.color(this, R.color.c_card));
+        Design.pad(this, nav, 8, 4, 4);
+        nav.setBackgroundColor(Design.color(this, R.color.c_nav_bg));
         root.addView(nav);
         setContentView(root);
         navigation();
@@ -118,6 +142,29 @@ public class MainActivity extends AppActivity {
                             android.util.Log.w("MagnetVault", "Cleanup deferred", e);
                         }
                     });
+    }
+
+    private LinearLayout buildFab() {
+        LinearLayout box = Design.row(this);
+        box.setGravity(Gravity.CENTER);
+        box.setBackgroundResource(R.drawable.bg_fab);
+        box.setElevation(Ui.dp(this, 6));
+        Design.pad(this, box, 18, 0, 0);
+        box.setFocusable(true);
+        box.setClickable(true);
+        box.setContentDescription("添加收藏");
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.ic_add);
+        icon.setColorFilter(Design.color(this, R.color.c_on_accent));
+        icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20));
+        ip.rightMargin = Ui.dp(this, 6);
+        box.addView(icon, ip);
+        TextView label = Design.text(this, "添加", 15, R.color.c_on_accent);
+        label.setTypeface(null, Typeface.BOLD);
+        box.addView(label);
+        box.setOnClickListener(v -> addEntry());
+        return box;
     }
 
     private void consumeFolderIntent(Intent intent) {
@@ -265,7 +312,7 @@ public class MainActivity extends AppActivity {
 
     private String categoryName() {
         for (Category c : cats) if (c.id.equals(category)) return c.name;
-        return "文件夹";
+        return "整理收藏";
     }
 
     private String pathName(String id) {
@@ -344,26 +391,33 @@ public class MainActivity extends AppActivity {
     private void navigation() {
         nav.removeAllViews();
         String[] labels = {"收藏", "整理", "我的"};
-        int[] icons = {R.drawable.ic_magnet, R.drawable.ic_folder, R.drawable.ic_shield};
+        int[] icons = {R.drawable.ic_magnet, R.drawable.ic_folder, R.drawable.ic_user};
         for (int i = 0; i < labels.length; i++) {
             final int value = i;
+            boolean active = tab == i;
             LinearLayout item = Design.column(this);
             item.setGravity(Gravity.CENTER);
             item.setMinimumHeight(Ui.dp(this, 56));
-            Design.pad(this, item, 8, 6, 6);
+            Design.pad(this, item, 6, 4, 4);
             item.setBackgroundResource(R.drawable.bg_flat);
-            item.setSelected(tab == i);
+            item.setSelected(active);
             item.setFocusable(true);
-            item.setContentDescription(labels[i] + (tab == i ? "，已选中" : ""));
+            item.setContentDescription(labels[i] + (active ? "，已选中" : ""));
+
+            FrameLayout pill = new FrameLayout(this);
+            if (active) pill.setBackgroundResource(R.drawable.bg_nav_pill);
             ImageView icon = new ImageView(this);
             icon.setImageResource(icons[i]);
-            icon.setColorFilter(Design.color(this, tab == i ? R.color.c_accent : R.color.c_text2));
+            icon.setColorFilter(Design.color(this, active ? R.color.c_accent : R.color.c_text2));
             icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            item.addView(icon, new LinearLayout.LayoutParams(Ui.dp(this, 21), Ui.dp(this, 21)));
+            int sz = Ui.dp(this, 20);
+            pill.addView(icon, new FrameLayout.LayoutParams(sz, sz, Gravity.CENTER));
+            item.addView(pill, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 30)));
+
             Design.gap(this, item, 3);
             TextView text =
-                    Design.text(this, labels[i], 12, tab == i ? R.color.c_accent : R.color.c_text2);
-            text.setTypeface(null, tab == i ? Typeface.BOLD : Typeface.NORMAL);
+                    Design.text(this, labels[i], 12, active ? R.color.c_accent : R.color.c_text2);
+            text.setTypeface(null, active ? Typeface.BOLD : Typeface.NORMAL);
             text.setGravity(Gravity.CENTER);
             text.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             text.setSingleLine(true);
@@ -377,13 +431,19 @@ public class MainActivity extends AppActivity {
         return Design.quietIcon(this, icon, label, action);
     }
 
+    private String sortShortLabel() {
+        if (sort == Repo.SORT_UPDATED) return "最近修改";
+        if (sort == Repo.SORT_TITLE) return "标题";
+        return "最新添加";
+    }
+
     private void buildToolbar() {
         toolbar.removeAllViews();
         LinearLayout bar = Design.row(this);
-        Design.pad(this, bar, 8, 4, 4);
+        Design.pad(this, bar, 10, 8, 6);
         bar.setMinimumHeight(Ui.dp(this, 56));
         if (selecting) {
-            bar.addView(
+            ImageButton close =
                     tool(
                             R.drawable.ic_close,
                             "退出多选",
@@ -391,8 +451,11 @@ public class MainActivity extends AppActivity {
                                 selecting = false;
                                 selected.clear();
                                 selectionUi();
-                            }));
-            TextView count = Design.text(this, "已选 " + selected.size() + " 条", 17, R.color.c_text);
+                            });
+            close.setColorFilter(Design.color(this, R.color.c_text));
+            bar.addView(close);
+            TextView count = Design.text(this, "已选 " + selected.size() + " 条", 18, R.color.c_text);
+            count.setTypeface(null, Typeface.BOLD);
             bar.addView(count, new LinearLayout.LayoutParams(0, -2, 1));
             bar.addView(
                     Design.textAction(
@@ -404,10 +467,26 @@ public class MainActivity extends AppActivity {
                                 selectionUi();
                             }));
         } else {
-            if (tab == 1 && category != null)
-                bar.addView(tool(R.drawable.ic_back, "返回上级", this::goUpOneLevel));
+            if (tab == 1 && category != null) {
+                ImageButton back = tool(R.drawable.ic_back, "返回上级", this::goUpOneLevel);
+                back.setColorFilter(Design.color(this, R.color.c_text));
+                bar.addView(back);
+            } else if (tab == 0) {
+                View badge =
+                        Design.iconBadge(
+                                this,
+                                R.drawable.ic_cat,
+                                Design.color(this, R.color.c_accent),
+                                Design.color(this, R.color.c_accent_soft),
+                                36,
+                                19);
+                LinearLayout.LayoutParams bp = (LinearLayout.LayoutParams) badge.getLayoutParams();
+                bp.leftMargin = Ui.dp(this, 6);
+                bp.rightMargin = Ui.dp(this, 6);
+                bar.addView(badge, bp);
+            }
             LinearLayout copy = Design.column(this);
-            Design.pad(this, copy, 8, 2, 2);
+            Design.pad(this, copy, 6, 2, 2);
             TextView name =
                     Design.text(
                             this,
@@ -422,11 +501,11 @@ public class MainActivity extends AppActivity {
             if (tab == 0)
                 info =
                         filter == 1
-                                ? starred + " 条星标"
-                                : filter == 2 ? unfiled + " 条未分类" : total + " 条收藏";
+                                ? starred + " 条星标收藏"
+                                : filter == 2 ? unfiled + " 条未分类" : total + " 条收藏 · " + starred + " 星标";
             else if (tab == 1)
-                info = category == null ? rootFolderCount() + " 个文件夹" : pathName(category);
-            else info = "磁力收藏夹";
+                info = category == null ? rootFolderCount() + " 个根分类" : pathName(category);
+            else info = "磁力收藏夹 · 本地加密库";
             TextView sub = Design.text(this, info, 12, R.color.c_text2);
             sub.setSingleLine(true);
             sub.setEllipsize(TextUtils.TruncateAt.MIDDLE);
@@ -434,50 +513,40 @@ public class MainActivity extends AppActivity {
             bar.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
             if (tab != 2) {
                 bar.addView(tool(R.drawable.ic_search, "搜索收藏", this::openSearch));
-                if (tab == 0) bar.addView(tool(R.drawable.ic_add, "添加收藏", this::addEntry));
+                if (tab == 1) bar.addView(tool(R.drawable.ic_add, "添加收藏", this::addEntry));
                 bar.addView(
                         tool(R.drawable.ic_more, tab == 1 ? "文件夹操作" : "收藏操作", this::pageActions));
             }
         }
         toolbar.addView(bar);
+
         if (tab == 0 && !selecting) {
-            LinearLayout filters = Design.row(this);
-            Design.pad(this, filters, 16, 0, 0);
-            String[] names = {"全部", "星标", "未分类"};
+            LinearLayout filterBar = Design.row(this);
+            Design.pad(this, filterBar, 14, 2, 8);
+            HorizontalScrollView hsv = new HorizontalScrollView(this);
+            hsv.setHorizontalScrollBarEnabled(false);
+            LinearLayout pills = Design.row(this);
+            String[] names = {"全部 " + total, "星标 " + starred, "未分类 " + unfiled};
             for (int i = 0; i < names.length; i++) {
                 final int f = i;
-                LinearLayout option = Design.column(this);
-                option.setGravity(Gravity.CENTER);
-                option.setMinimumHeight(Ui.dp(this, 48));
-                option.setBackgroundResource(R.drawable.bg_flat);
-                option.setFocusable(true);
-                option.setSelected(filter == i);
-                TextView label =
-                        Design.text(
-                                this,
-                                names[i],
-                                14,
-                                filter == i ? R.color.c_accent : R.color.c_text2);
-                label.setTypeface(null, filter == i ? Typeface.BOLD : Typeface.NORMAL);
-                label.setGravity(Gravity.CENTER);
-                label.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                label.setSingleLine(true);
-                option.addView(label, new LinearLayout.LayoutParams(-1, -2));
-                Design.gap(this, option, 6);
-                View line = new View(this);
-                line.setBackgroundColor(Design.color(this, R.color.c_accent));
-                line.setVisibility(filter == i ? View.VISIBLE : View.INVISIBLE);
-                option.addView(
-                        line, new LinearLayout.LayoutParams(Ui.dp(this, 22), Ui.dp(this, 2)));
-                option.setOnClickListener(
-                        v -> {
-                            rememberPosition();
-                            filter = f;
-                            reload();
-                        });
-                filters.addView(option, new LinearLayout.LayoutParams(0, -2, 1));
+                LinearLayout pill = Design.pill(this, names[i], 0, filter == i, () -> {
+                    rememberPosition();
+                    filter = f;
+                    reload();
+                });
+                LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-2, -2);
+                pp.rightMargin = Ui.dp(this, 8);
+                pills.addView(pill, pp);
             }
-            toolbar.addView(filters);
+            hsv.addView(pills);
+            filterBar.addView(hsv, new LinearLayout.LayoutParams(0, -2, 1));
+
+            LinearLayout sortPill =
+                    Design.pill(this, sortShortLabel(), R.drawable.ic_sort, false, this::chooseSort);
+            LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(-2, -2);
+            sp.leftMargin = Ui.dp(this, 8);
+            filterBar.addView(sortPill, sp);
+            toolbar.addView(filterBar);
         }
     }
 
@@ -490,15 +559,25 @@ public class MainActivity extends AppActivity {
     private void pageActions() {
         if (tab == 0 || category != null) {
             List<String> labels = new ArrayList<>(Arrays.asList("添加收藏（单条 / 批量）", "排序方式", "多选"));
+            List<Integer> icons =
+                    new ArrayList<>(
+                            Arrays.asList(R.drawable.ic_add, R.drawable.ic_sort, R.drawable.ic_check));
             if (tab == 1) {
                 labels.add("新建子分类");
+                icons.add(R.drawable.ic_folder);
                 labels.add("管理当前分类");
-            } else labels.add("分类与标签");
+                icons.add(R.drawable.ic_edit);
+            } else {
+                labels.add("分类与标签");
+                icons.add(R.drawable.ic_tag);
+            }
+            int[] iconArr = new int[icons.size()];
+            for (int i = 0; i < icons.size(); i++) iconArr[i] = icons.get(i);
             Ui.menuSheet(
                     this,
                     tab == 1 ? categoryName() : "收藏操作",
                     labels.toArray(new String[0]),
-                    null,
+                    iconArr,
                     (d, w) -> {
                         if (w == 0) addEntry();
                         if (w == 1) chooseSort();
@@ -517,7 +596,9 @@ public class MainActivity extends AppActivity {
                     this,
                     "文件夹操作",
                     new String[] {"新建分类", "分类管理", "标签管理", "添加收藏（单条 / 批量）"},
-                    null,
+                    new int[] {
+                        R.drawable.ic_add, R.drawable.ic_folder, R.drawable.ic_tag, R.drawable.ic_import
+                    },
                     (d, w) -> {
                         if (w == 0) manageFolder("create", null);
                         if (w == 1) manage(false);
@@ -564,7 +645,7 @@ public class MainActivity extends AppActivity {
 
     private void render() {
         header.removeAllViews();
-        Design.pad(this, header, 16, 0, 0);
+        Design.pad(this, header, 14, 0, 0);
         rows.clear();
         if (tab == 0) rows.addAll(entries);
         if (tab == 1) {
@@ -581,28 +662,60 @@ public class MainActivity extends AppActivity {
     }
 
     private void emptyState() {
-        Design.gap(this, header, 40);
-        String label =
-                tab == 1
-                        ? (category == null ? "还没有文件夹" : "这个文件夹还没有收藏")
-                        : filter == 1 ? "还没有星标收藏" : filter == 2 ? "没有未分类收藏" : "还没有收藏";
-        TextView empty = Design.text(this, label, 16, R.color.c_text2);
-        empty.setGravity(Gravity.CENTER);
-        header.addView(empty);
-        Design.gap(this, header, 12);
-        if (tab == 1 && category == null)
-            header.addView(Design.textAction(this, "新建分类", () -> manageFolder("create", null)));
-        else if (tab == 0 && filter != 0)
+        if (tab == 1 && category == null) {
             header.addView(
-                    Design.textAction(
+                    Design.emptyState(
                             this,
+                            R.drawable.ill_empty_folder,
+                            "还没有文件夹",
+                            "用多级文件夹整理影片、剧集或常用合集",
+                            "新建分类",
+                            () -> manageFolder("create", null)));
+        } else if (tab == 1) {
+            header.addView(
+                    Design.emptyState(
+                            this,
+                            R.drawable.ill_empty_folder,
+                            "这个文件夹还没有收藏",
+                            "可以粘贴链接直接保存到当前文件夹",
+                            "添加收藏",
+                            this::addEntry));
+        } else if (filter == 1) {
+            header.addView(
+                    Design.emptyState(
+                            this,
+                            R.drawable.ill_empty_vault,
+                            "还没有星标收藏",
+                            "轻点条目右侧的星标图标，把常用内容放在手边",
                             "查看全部收藏",
                             () -> {
                                 rememberPosition();
                                 filter = 0;
                                 reload();
                             }));
-        else header.addView(Design.textAction(this, "添加收藏", this::addEntry));
+        } else if (filter == 2) {
+            header.addView(
+                    Design.emptyState(
+                            this,
+                            R.drawable.ill_empty_vault,
+                            "没有未分类收藏",
+                            "所有收藏都已整齐归类",
+                            "查看全部收藏",
+                            () -> {
+                                rememberPosition();
+                                filter = 0;
+                                reload();
+                            }));
+        } else {
+            header.addView(
+                    Design.emptyState(
+                            this,
+                            R.drawable.ill_empty_vault,
+                            "收藏夹还是空的",
+                            "支持 magnet 与 ED2K 链接，粘贴多条会自动识别去重",
+                            "添加第一条收藏",
+                            this::addEntry));
+        }
     }
 
     private void toggle(String id) {
@@ -611,14 +724,57 @@ public class MainActivity extends AppActivity {
     }
 
     private void mineHeader() {
-        Design.gap(this, header, 12);
+        Design.gap(this, header, 8);
+        // Hero vault card with SVG emblem + live stats
+        LinearLayout hero = Design.card(this);
+        LinearLayout top = Design.row(this);
+        ImageView emblem = new ImageView(this);
+        emblem.setImageResource(R.drawable.ill_vault_badge);
+        emblem.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 56));
+        ep.rightMargin = Ui.dp(this, 14);
+        top.addView(emblem, ep);
+
+        LinearLayout info = Design.column(this);
+        LinearLayout titleRow = Design.row(this);
+        TextView appTitle = Design.text(this, "磁力收藏夹", 18, R.color.c_text);
+        appTitle.setTypeface(null, Typeface.BOLD);
+        titleRow.addView(appTitle);
+        Design.hgap(this, titleRow, 8);
+        TextView ver = Design.tagChip(this, "v" + Design.versionName(this), true, null);
+        titleRow.addView(ver);
+        info.addView(titleRow);
+        Design.gap(this, info, 4);
+        info.addView(
+                Design.text(
+                        this,
+                        ThemePrefs.lastBackupAt(this) == 0
+                                ? "本地加密存储 · 尚未备份"
+                                : "最近备份 " + Ui.time(ThemePrefs.lastBackupAt(this)),
+                        12,
+                        R.color.c_text2));
+        top.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+        hero.addView(top);
+
+        Design.gap(this, hero, 14);
+        LinearLayout stats = Design.row(this);
+        stats.setBackgroundResource(R.drawable.bg_card_soft);
+        Design.pad(this, stats, 8, 10, 10);
+        addStatCell(stats, String.valueOf(total), "收藏");
+        addStatCell(stats, String.valueOf(starred), "星标");
+        addStatCell(stats, String.valueOf(cats.size()), "分类");
+        addStatCell(stats, String.valueOf(tags.size()), "标签");
+        hero.addView(stats);
+        header.addView(hero);
+
+        Design.gap(this, header, 14);
         header.addView(
                 Design.action(
                         this,
                         "备份与恢复",
-                        ThemePrefs.lastBackupAt(this) == 0
-                                ? "尚未备份"
-                                : "最近备份 " + Ui.time(ThemePrefs.lastBackupAt(this)),
+                        ThemePrefs.isDavConfigured(this)
+                                ? "已连接坚果云 · 支持加密导出与自动备份"
+                                : "导出加密 .mjbf 文件或连接坚果云",
                         R.drawable.ic_cloud,
                         () -> settings("backup")));
         Design.gap(this, header, 8);
@@ -626,7 +782,7 @@ public class MainActivity extends AppActivity {
                 Design.action(
                         this,
                         "回收站",
-                        trash + " 条收藏",
+                        trash == 0 ? "空空如也" : trash + " 条收藏等待处理",
                         R.drawable.ic_trash,
                         () -> startActivity(new Intent(this, TrashActivity.class))));
         Design.gap(this, header, 8);
@@ -637,18 +793,32 @@ public class MainActivity extends AppActivity {
                         cats.size() + " 个分类 · " + tags.size() + " 个标签",
                         R.drawable.ic_folder,
                         () -> manage(false)));
-        Design.gap(this, header, 20);
+        Design.gap(this, header, 16);
         header.addView(
                 Design.action(
                         this,
-                        "设置",
-                        "主题与备份偏好",
-                        R.drawable.ic_settings,
+                        "外观与偏好",
+                        "主题：" + ThemePrefs.themeLabel(this),
+                        R.drawable.ic_theme,
                         () -> settings("appearance")));
         Design.gap(this, header, 8);
-        header.addView(Design.action(this, "使用帮助", null, R.drawable.ic_link, this::help));
+        header.addView(
+                Design.action(this, "使用帮助", "快速上手导入、批量整理与链接打开", R.drawable.ic_info, this::help));
         Design.gap(this, header, 20);
-        header.addView(Design.text(this, "磁力收藏夹 2.2.1", 12, R.color.c_text2));
+    }
+
+    private void addStatCell(LinearLayout parent, String value, String label) {
+        LinearLayout cell = Design.column(this);
+        cell.setGravity(Gravity.CENTER);
+        TextView num = Design.text(this, value, 17, R.color.c_text);
+        num.setTypeface(null, Typeface.BOLD);
+        num.setGravity(Gravity.CENTER);
+        cell.addView(num);
+        Design.gap(this, cell, 2);
+        TextView sub = Design.text(this, label, 11, R.color.c_text2);
+        sub.setGravity(Gravity.CENTER);
+        cell.addView(sub);
+        parent.addView(cell, new LinearLayout.LayoutParams(0, -2, 1));
     }
 
     private void settings(String section) {
@@ -661,10 +831,10 @@ public class MainActivity extends AppActivity {
         new AlertDialog.Builder(this)
                 .setTitle("更快用好收藏夹")
                 .setMessage(
-                        "添加收藏：点右上角加号粘贴，一条或多条自动识别。预览清单可直接设置各条的分类、标签、标题和备注。\n\n"
+                        "添加收藏：点右下角「添加」粘贴，一条或多条自动识别。预览清单可直接设置各条的分类、标签、标题和备注。\n\n"
                                 + "迁移整理：清单内搜索、勾选可分组设置分类和标签，也支持粘贴带标题、链接、分类、标签列的表格。\n\n"
                                 + "整理收藏：进入「整理」管理分类和标签。建错的标签可改名、合并或删除。\n\n"
-                                + "批量操作：在更多菜单点「多选」或长按收藏，可移动分类、添加标签或移入回收站。\n\n"
+                                + "批量操作：在更多菜单点「多选」或长按收藏，可移动分类、添加标签、星标或移入回收站。\n\n"
                                 + "打开链接：磁力与 ED2K 都先复制，再打开 MoePal 识别。\n\n"
                                 + "备份与恢复：在「我的」中导出加密文件或连接坚果云。请妥善保存备份密码。\n\n"
                                 + "本应用只保存链接与文字信息。")
@@ -717,15 +887,51 @@ public class MainActivity extends AppActivity {
         batch.removeAllViews();
         batch.setVisibility(selecting ? View.VISIBLE : View.GONE);
         nav.setVisibility(selecting ? View.GONE : View.VISIBLE);
+        if (fab != null) {
+            boolean showFab = !selecting && (tab == 0 || tab == 1);
+            fab.setVisibility(showFab ? View.VISIBLE : View.GONE);
+        }
         buildToolbar();
         if (selecting) {
-            String[] labels = {"移动", "加标签", "删除"};
+            String[] labels = {"移动", "加标签", "星标", "删除"};
+            int[] icons = {
+                R.drawable.ic_folder, R.drawable.ic_tag, R.drawable.ic_star, R.drawable.ic_trash
+            };
+            boolean enabled = !selected.isEmpty();
             for (int i = 0; i < labels.length; i++) {
                 final int action = i;
-                Button b = Design.textAction(this, labels[i], () -> batchAction(action));
-                b.setEnabled(!selected.isEmpty());
-                b.setAlpha(selected.isEmpty() ? .45f : 1f);
-                batch.addView(b, new LinearLayout.LayoutParams(0, -2, 1));
+                boolean danger = i == 3;
+                LinearLayout btn = Design.column(this);
+                btn.setGravity(Gravity.CENTER);
+                btn.setMinimumHeight(Ui.dp(this, 48));
+                Design.pad(this, btn, 4, 4, 4);
+                btn.setBackgroundResource(R.drawable.bg_flat);
+                btn.setEnabled(enabled);
+                btn.setAlpha(enabled ? 1f : .4f);
+                btn.setFocusable(true);
+                btn.setClickable(enabled);
+                ImageView iv = new ImageView(this);
+                iv.setImageResource(icons[i]);
+                iv.setColorFilter(
+                        Design.color(
+                                this,
+                                danger
+                                        ? R.color.c_danger
+                                        : (i == 2 ? R.color.c_star : R.color.c_text)));
+                iv.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                btn.addView(iv, new LinearLayout.LayoutParams(Ui.dp(this, 19), Ui.dp(this, 19)));
+                Design.gap(this, btn, 3);
+                TextView tv =
+                        Design.text(
+                                this,
+                                labels[i],
+                                11,
+                                danger ? R.color.c_danger : R.color.c_text);
+                tv.setTypeface(null, Typeface.BOLD);
+                tv.setGravity(Gravity.CENTER);
+                btn.addView(tv);
+                btn.setOnClickListener(v -> batchAction(action));
+                batch.addView(btn, new LinearLayout.LayoutParams(0, -2, 1));
             }
         }
         if (adapter != null) adapter.notifyDataSetChanged();
@@ -768,7 +974,23 @@ public class MainActivity extends AppActivity {
                                     () -> Repo.addTagsToEntries(this, ids, t),
                                     n -> batchDone("标签已添加"));
                     });
-        if (which == 2)
+        if (which == 2) {
+            boolean allStarred = true;
+            for (Entry e : entries) {
+                if (selected.contains(e.id) && !e.starred) {
+                    allStarred = false;
+                    break;
+                }
+            }
+            final boolean targetStar = !allStarred;
+            load(
+                    () -> {
+                        for (String id : ids) Repo.setStar(this, id, targetStar);
+                        return true;
+                    },
+                    ok -> batchDone(targetStar ? "已添加星标" : "已取消星标"));
+        }
+        if (which == 3)
             new AlertDialog.Builder(this)
                     .setTitle("移入回收站？")
                     .setMessage(ids.size() + " 条收藏将移入回收站，可在「我的 → 回收站」恢复。")
@@ -869,21 +1091,28 @@ public class MainActivity extends AppActivity {
                 View view = recycled;
                 if (view == null || !(view.getTag() instanceof FolderHolder)) {
                     LinearLayout wrap = Design.column(MainActivity.this);
-                    Design.pad(MainActivity.this, wrap, 16, 0, 0);
+                    Design.pad(MainActivity.this, wrap, 14, 4, 4);
                     LinearLayout line = Design.row(MainActivity.this);
-                    Design.pad(MainActivity.this, line, 8, 8, 0);
-                    line.setMinimumHeight(Ui.dp(MainActivity.this, 64));
-                    line.setBackgroundResource(R.drawable.bg_flat);
-                    ImageView icon = new ImageView(MainActivity.this);
-                    icon.setImageResource(R.drawable.ic_folder);
-                    icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                    Design.pad(MainActivity.this, line, 12, 12, 12);
+                    line.setMinimumHeight(Ui.dp(MainActivity.this, 68));
+                    line.setBackgroundResource(R.drawable.bg_card);
+
+                    FrameLayout badge =
+                            Design.iconBadge(
+                                    MainActivity.this,
+                                    R.drawable.ic_folder,
+                                    c.color,
+                                    Design.softTint(c.color),
+                                    40,
+                                    20);
                     LinearLayout.LayoutParams ip =
-                            new LinearLayout.LayoutParams(
-                                    Ui.dp(MainActivity.this, 22), Ui.dp(MainActivity.this, 22));
+                            (LinearLayout.LayoutParams) badge.getLayoutParams();
                     ip.rightMargin = Ui.dp(MainActivity.this, 12);
-                    line.addView(icon, ip);
+                    line.addView(badge, ip);
+
                     LinearLayout copy = Design.column(MainActivity.this);
                     TextView name = Design.text(MainActivity.this, "", 15, R.color.c_text);
+                    name.setTypeface(null, Typeface.BOLD);
                     name.setSingleLine(true);
                     name.setEllipsize(TextUtils.TruncateAt.END);
                     copy.addView(name);
@@ -893,20 +1122,22 @@ public class MainActivity extends AppActivity {
                     detail.setEllipsize(TextUtils.TruncateAt.END);
                     copy.addView(detail);
                     line.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
+
                     ImageButton more = tool(R.drawable.ic_more, "管理分类", () -> {});
                     line.addView(more);
+                    ImageView chev = new ImageView(MainActivity.this);
+                    chev.setImageResource(R.drawable.ic_chevron_right);
+                    chev.setColorFilter(Design.color(MainActivity.this, R.color.c_text2));
+                    chev.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                    line.addView(chev, new LinearLayout.LayoutParams(Ui.dp(MainActivity.this, 18), Ui.dp(MainActivity.this, 18)));
+
                     wrap.addView(line);
-                    View divider = new View(MainActivity.this);
-                    divider.setBackgroundColor(Design.color(MainActivity.this, R.color.c_divider));
-                    LinearLayout.LayoutParams dp =
-                            new LinearLayout.LayoutParams(-1, Ui.dp(MainActivity.this, 1));
-                    dp.leftMargin = Ui.dp(MainActivity.this, 42);
-                    wrap.addView(divider, dp);
                     wrap.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
                     FolderHolder h = new FolderHolder();
                     h.name = name;
                     h.detail = detail;
-                    h.icon = icon;
+                    h.badge = badge;
+                    h.icon = (ImageView) badge.getChildAt(0);
                     h.more = more;
                     h.line = line;
                     wrap.setTag(h);
@@ -915,6 +1146,8 @@ public class MainActivity extends AppActivity {
                 FolderHolder h = (FolderHolder) view.getTag();
                 h.name.setText(c.name);
                 h.icon.setColorFilter(c.color);
+                ((android.graphics.drawable.GradientDrawable) h.badge.getBackground())
+                        .setColor(Design.softTint(c.color));
                 h.detail.setText(
                         c.count
                                 + " 条收藏"
@@ -935,15 +1168,27 @@ public class MainActivity extends AppActivity {
                 h = new EntryHolder();
                 h.title = recycled.findViewById(R.id.item_title);
                 h.sub = recycled.findViewById(R.id.item_sub);
+                h.proto = recycled.findViewById(R.id.item_proto);
                 h.star = recycled.findViewById(R.id.item_star);
                 h.more = recycled.findViewById(R.id.item_more);
+                h.badge = recycled.findViewById(R.id.item_badge);
                 h.icon = recycled.findViewById(R.id.item_icon);
                 h.card = recycled.findViewById(R.id.entry_card);
                 recycled.setTag(h);
             } else h = (EntryHolder) recycled.getTag();
             Entry e = (Entry) rows.get(pos);
+            boolean ed2k = MagnetParser.isEd2k(e.magnet);
             h.title.setText(e.displayTitle());
+
+            h.proto.setText(ed2k ? "ED2K" : "BT");
+            h.proto.setTextColor(Design.color(MainActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
+            h.proto.setBackgroundResource(ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
+
             String meta = e.categoryId == null ? "未分类" : e.categoryName;
+            if (ed2k) {
+                long sz = MagnetParser.xlSize(e.magnet);
+                if (sz > 0) meta += " · " + Ui.sizeText(sz);
+            }
             if (!e.tags.isEmpty()) meta += " · " + e.tagText();
             else
                 meta +=
@@ -951,24 +1196,55 @@ public class MainActivity extends AppActivity {
                                 + new java.text.SimpleDateFormat("MM月dd日", Locale.CHINA)
                                         .format(new Date(e.createdAt));
             h.sub.setText(meta);
+
             boolean picked = selected.contains(e.id);
-            h.card.setBackgroundResource(picked ? R.drawable.row_selected : R.drawable.bg_flat);
-            h.icon.setImageResource(
-                    selecting
-                            ? (picked ? R.drawable.ic_check : R.drawable.ic_magnet)
-                            : R.drawable.ic_magnet);
-            h.star.setText(e.starred ? "★" : "☆");
+            h.card.setBackgroundResource(picked ? R.drawable.bg_card_selected : R.drawable.bg_card);
+            if (selecting) {
+                h.badge.setBackgroundResource(R.drawable.bg_badge_magnet);
+                h.icon.setImageResource(picked ? R.drawable.ic_check : R.drawable.ic_circle);
+                h.icon.setColorFilter(
+                        Design.color(
+                                MainActivity.this, picked ? R.color.c_accent : R.color.c_text2));
+            } else {
+                h.badge.setBackgroundResource(
+                        ed2k ? R.drawable.bg_badge_ed2k : R.drawable.bg_badge_magnet);
+                h.icon.setImageResource(ed2k ? R.drawable.ic_file : R.drawable.ic_magnet);
+                h.icon.setColorFilter(
+                        Design.color(
+                                MainActivity.this, ed2k ? R.color.c_accent2 : R.color.c_accent));
+            }
+
+            h.star.setImageResource(e.starred ? R.drawable.ic_star : R.drawable.ic_star_outline);
+            h.star.setColorFilter(
+                    Design.color(
+                            MainActivity.this, e.starred ? R.color.c_star : R.color.c_text2));
             h.star.setContentDescription((e.starred ? "取消星标 " : "添加星标 ") + e.displayTitle());
             h.star.setVisibility(selecting ? View.GONE : View.VISIBLE);
             h.more.setVisibility(selecting ? View.GONE : View.VISIBLE);
             h.star.setOnClickListener(
-                    v ->
+                    v -> {
+                        final boolean next = !e.starred;
+                        e.starred = next;
+                        starred += next ? 1 : -1;
+                        if (starred < 0) starred = 0;
+                        if (tab == 0 && filter == 1 && !next) {
                             load(
                                     () -> {
-                                        Repo.setStar(MainActivity.this, e.id, !e.starred);
+                                        Repo.setStar(MainActivity.this, e.id, next);
                                         return true;
                                     },
-                                    ok -> reload()));
+                                    ok -> reload());
+                        } else {
+                            buildToolbar();
+                            adapter.notifyDataSetChanged();
+                            load(
+                                    () -> {
+                                        Repo.setStar(MainActivity.this, e.id, next);
+                                        return true;
+                                    },
+                                    ok -> {});
+                        }
+                    });
             h.more.setContentDescription("更多操作 " + e.displayTitle());
             h.more.setOnClickListener(v -> entryActions(e));
             recycled.setSelected(picked);
@@ -978,14 +1254,15 @@ public class MainActivity extends AppActivity {
 
     private static class FolderHolder {
         TextView name, detail;
+        FrameLayout badge;
         ImageView icon;
         ImageButton more;
         View line;
     }
 
     private static class EntryHolder {
-        TextView title, sub, star;
-        ImageView icon;
-        View more, card;
+        TextView title, sub, proto;
+        ImageView icon, star;
+        View more, card, badge;
     }
 }

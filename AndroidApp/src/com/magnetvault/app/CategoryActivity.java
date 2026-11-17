@@ -53,16 +53,19 @@ public class CategoryActivity extends AppActivity {
         toolbar = Design.column(this);
         root.addView(toolbar);
         content = Design.column(this);
-        Design.pad(this, content, 16, 0, 0);
+        Design.pad(this, content, 14, 4, 0);
         LinearLayout tabs = Design.row(this);
         String[] names = {"分类", "标签"};
         for (int i = 0; i < names.length; i++) {
             final boolean value = i == 1;
-            Button b = Design.textAction(this, names[i], () -> switchMode(value));
+            Button b = Design.chip(this, names[i], tags == value, () -> switchMode(value));
             b.setTag("mode:" + i);
-            tabs.addView(b, new LinearLayout.LayoutParams(0, -2, 1));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            lp.rightMargin = Ui.dp(this, 8);
+            tabs.addView(b, lp);
         }
         content.addView(tabs);
+        Design.gap(this, content, 6);
         search = Design.input(this, "搜索当前层级分类", false);
         search.setSingleLine(true);
         search.setTextSize(14);
@@ -81,18 +84,21 @@ public class CategoryActivity extends AppActivity {
                     }
                 });
         summary = Design.text(this, "正在读取…", 12, R.color.c_text2);
-        Design.pad(this, summary, 8, 4, 4);
+        Design.pad(this, summary, 4, 6, 4);
         content.addView(summary);
         root.addView(content);
         list = new ListView(this);
         list.setDivider(null);
+        list.setDividerHeight(0);
         list.setClipToPadding(false);
-        Design.pad(this, list, 16, 0, 16);
+        Design.pad(this, list, 0, 2, 20);
         list.setAdapter(adapter);
         FrameLayout frame = new FrameLayout(this);
         frame.addView(list, new FrameLayout.LayoutParams(-1, -1));
         empty = Design.text(this, "", 15, R.color.c_text2);
         empty.setGravity(android.view.Gravity.CENTER);
+        empty.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ill_empty_folder, 0, 0);
+        empty.setCompoundDrawablePadding(Ui.dp(this, 12));
         Design.pad(this, empty, 24, 40, 24);
         frame.addView(empty, new FrameLayout.LayoutParams(-1, -2));
         root.addView(frame, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -756,19 +762,27 @@ public class CategoryActivity extends AppActivity {
             Holder h;
             if (recycled == null) {
                 LinearLayout wrap = Design.column(CategoryActivity.this);
+                Design.pad(CategoryActivity.this, wrap, 14, 4, 4);
                 LinearLayout row = Design.row(CategoryActivity.this);
-                Design.pad(CategoryActivity.this, row, 8, 8, 0);
-                row.setMinimumHeight(Ui.dp(CategoryActivity.this, 64));
-                row.setBackgroundResource(R.drawable.bg_flat);
-                ImageView icon = new ImageView(CategoryActivity.this);
-                icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-                LinearLayout.LayoutParams ip =
-                        new LinearLayout.LayoutParams(
-                                Ui.dp(CategoryActivity.this, 22), Ui.dp(CategoryActivity.this, 22));
+                Design.pad(CategoryActivity.this, row, 12, 12, 12);
+                row.setMinimumHeight(Ui.dp(CategoryActivity.this, 66));
+                row.setBackgroundResource(R.drawable.bg_card);
+
+                FrameLayout badge =
+                        Design.iconBadge(
+                                CategoryActivity.this,
+                                R.drawable.ic_folder,
+                                Design.color(CategoryActivity.this, R.color.c_accent),
+                                Design.color(CategoryActivity.this, R.color.c_accent_soft),
+                                40,
+                                20);
+                LinearLayout.LayoutParams ip = (LinearLayout.LayoutParams) badge.getLayoutParams();
                 ip.rightMargin = Ui.dp(CategoryActivity.this, 12);
-                row.addView(icon, ip);
+                row.addView(badge, ip);
+
                 LinearLayout copy = Design.column(CategoryActivity.this);
                 TextView name = Design.text(CategoryActivity.this, "", 15, R.color.c_text);
+                name.setTypeface(null, android.graphics.Typeface.BOLD);
                 name.setSingleLine(true);
                 name.setEllipsize(TextUtils.TruncateAt.END);
                 copy.addView(name);
@@ -781,19 +795,24 @@ public class CategoryActivity extends AppActivity {
                 ImageButton more =
                         Design.quietIcon(CategoryActivity.this, R.drawable.ic_more, "管理", () -> {});
                 row.addView(more);
+                ImageView chev = new ImageView(CategoryActivity.this);
+                chev.setImageResource(R.drawable.ic_chevron_right);
+                chev.setColorFilter(Design.color(CategoryActivity.this, R.color.c_text2));
+                chev.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+                row.addView(
+                        chev,
+                        new LinearLayout.LayoutParams(
+                                Ui.dp(CategoryActivity.this, 18),
+                                Ui.dp(CategoryActivity.this, 18)));
                 wrap.addView(row);
-                View line = new View(CategoryActivity.this);
-                line.setBackgroundColor(Design.color(CategoryActivity.this, R.color.c_divider));
-                LinearLayout.LayoutParams lp =
-                        new LinearLayout.LayoutParams(-1, Ui.dp(CategoryActivity.this, 1));
-                lp.leftMargin = Ui.dp(CategoryActivity.this, 42);
-                wrap.addView(line, lp);
                 wrap.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
                 h = new Holder();
                 h.name = name;
                 h.detail = detail;
-                h.icon = icon;
+                h.badge = badge;
+                h.icon = (ImageView) badge.getChildAt(0);
                 h.more = more;
+                h.chev = chev;
                 h.row = row;
                 wrap.setTag(h);
                 recycled = wrap;
@@ -803,10 +822,17 @@ public class CategoryActivity extends AppActivity {
             String title = tag ? (String) item : ((Category) item).name;
             h.name.setText(title);
             h.icon.setImageResource(tag ? R.drawable.ic_tag : R.drawable.ic_folder);
-            h.icon.setColorFilter(
+            int tint =
                     tag
-                            ? Design.color(CategoryActivity.this, R.color.c_accent)
-                            : ((Category) item).color);
+                            ? Design.color(CategoryActivity.this, R.color.c_accent2)
+                            : ((Category) item).color;
+            int bg =
+                    tag
+                            ? Design.color(CategoryActivity.this, R.color.c_accent2_soft)
+                            : Design.softTint(((Category) item).color);
+            h.icon.setColorFilter(tint);
+            ((android.graphics.drawable.GradientDrawable) h.badge.getBackground()).setColor(bg);
+            h.chev.setVisibility(tag ? View.GONE : View.VISIBLE);
             h.detail.setText(
                     tag
                             ? usage.get(title) + " 条收藏"
@@ -832,7 +858,8 @@ public class CategoryActivity extends AppActivity {
 
     private static class Holder {
         TextView name, detail;
-        ImageView icon;
+        FrameLayout badge;
+        ImageView icon, chev;
         ImageButton more;
         View row;
     }

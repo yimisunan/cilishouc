@@ -19,7 +19,7 @@ public class TrashActivity extends AppActivity {
 
     private final List<Entry> data = new ArrayList<>();
     private TrashAdapter adapter;
-    private TextView emptyView;
+    private View emptyView;
     private TextView subtitle;
 
     @Override
@@ -33,89 +33,64 @@ public class TrashActivity extends AppActivity {
         adapter = new TrashAdapter();
         list.setAdapter(adapter);
 
-        findViewById(R.id.btn_back)
-                .setOnClickListener(
-                        new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                finish();
-                            }
-                        });
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
         findViewById(R.id.btn_clear)
                 .setOnClickListener(
-                        new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                if (data.isEmpty()) {
-                                    Ui.toast(TrashActivity.this, "回收站已经是空的");
-                                    return;
-                                }
-                                new AlertDialog.Builder(TrashActivity.this)
-                                        .setTitle("清空回收站")
-                                        .setMessage("将永久删除 " + data.size() + " 条收藏，无法恢复。")
-                                        .setPositiveButton(
-                                                "永久删除",
-                                                new DialogInterface.OnClickListener() {
-                                                    @Override
-                                                    public void onClick(
-                                                            DialogInterface d, int which) {
-                                                        Repo.emptyTrash(TrashActivity.this);
-                                                        reload();
-                                                    }
-                                                })
-                                        .setNegativeButton("取消", null)
-                                        .show();
+                        v -> {
+                            if (data.isEmpty()) {
+                                Ui.toast(TrashActivity.this, "回收站已经是空的");
+                                return;
                             }
+                            new AlertDialog.Builder(TrashActivity.this)
+                                    .setTitle("清空回收站")
+                                    .setMessage("将永久删除 " + data.size() + " 条收藏，无法恢复。")
+                                    .setPositiveButton(
+                                            "永久删除",
+                                            (d, which) -> {
+                                                Repo.emptyTrash(TrashActivity.this);
+                                                reload();
+                                            })
+                                    .setNegativeButton("取消", null)
+                                    .show();
                         });
 
         list.setOnItemClickListener(
-                new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(
-                            AdapterView<?> parent, View view, int position, long id) {
-                        final Entry e = data.get(position);
-                        new AlertDialog.Builder(TrashActivity.this)
-                                .setTitle(e.displayTitle())
-                                .setItems(
-                                        new String[] {"恢复到列表", "永久删除"},
-                                        new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface d, int which) {
-                                                if (which == 0) {
-                                                    Repo.restore(TrashActivity.this, e.id);
-                                                    Ui.toast(TrashActivity.this, "已恢复");
-                                                } else {
-                                                    new AlertDialog.Builder(TrashActivity.this)
-                                                            .setTitle("永久删除这条收藏？")
-                                                            .setMessage(
-                                                                    e.displayTitle() + "\n此操作无法恢复。")
-                                                            .setNegativeButton("取消", null)
-                                                            .setPositiveButton(
-                                                                    "永久删除",
-                                                                    (confirm, index) ->
-                                                                            load(
-                                                                                    () -> {
-                                                                                        Repo
-                                                                                                .deleteForever(
-                                                                                                        TrashActivity
-                                                                                                                .this,
-                                                                                                        e.id);
-                                                                                        return true;
-                                                                                    },
-                                                                                    ok -> {
-                                                                                        reload();
-                                                                                        Ui.toast(
-                                                                                                TrashActivity
-                                                                                                        .this,
-                                                                                                "已永久删除");
-                                                                                    }))
-                                                            .show();
-                                                }
-                                                reload();
-                                            }
-                                        })
-                                .show();
-                    }
+                (parent, view, position, id) -> {
+                    final Entry e = data.get(position);
+                    Ui.menuSheet(
+                            TrashActivity.this,
+                            e.displayTitle(),
+                            new String[] {"恢复到列表", "永久删除"},
+                            new int[] {R.drawable.ic_restore, R.drawable.ic_trash},
+                            (d, which) -> {
+                                if (which == 0) {
+                                    Repo.restore(TrashActivity.this, e.id);
+                                    Ui.toast(TrashActivity.this, "已恢复");
+                                    reload();
+                                } else {
+                                    new AlertDialog.Builder(TrashActivity.this)
+                                            .setTitle("永久删除这条收藏？")
+                                            .setMessage(e.displayTitle() + "\n此操作无法恢复。")
+                                            .setNegativeButton("取消", null)
+                                            .setPositiveButton(
+                                                    "永久删除",
+                                                    (confirm, index) ->
+                                                            load(
+                                                                    () -> {
+                                                                        Repo.deleteForever(
+                                                                                TrashActivity.this,
+                                                                                e.id);
+                                                                        return true;
+                                                                    },
+                                                                    ok -> {
+                                                                        reload();
+                                                                        Ui.toast(
+                                                                                TrashActivity.this,
+                                                                                "已永久删除");
+                                                                    }))
+                                            .show();
+                                }
+                            });
                 });
     }
 
@@ -139,7 +114,9 @@ public class TrashActivity extends AppActivity {
                             data.isEmpty()
                                     ? "删除的条目会保留在这里，" + keepText
                                     : "共 " + data.size() + " 条 · " + keepText);
-                    findViewById(R.id.btn_clear).setEnabled(!data.isEmpty());
+                    View clear = findViewById(R.id.btn_clear);
+                    clear.setEnabled(!data.isEmpty());
+                    clear.setAlpha(data.isEmpty() ? 0.45f : 1f);
                 });
     }
 

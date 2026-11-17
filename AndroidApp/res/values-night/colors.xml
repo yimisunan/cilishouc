@@ -16,9 +16,13 @@
     <color name="c_accent">#85DAB6</color>
     <color name="c_accent2">#C5B9F0</color>
     <color name="c_accent_soft">#244B3C</color>
+    <color name="c_accent2_soft">#2E284D</color>
     <color name="c_danger">#FFABB3</color>
+    <color name="c_danger_soft">#3E2228</color>
     <color name="c_star">#EEC87C</color>
+    <color name="c_star_soft">#3D321D</color>
     <color name="c_search_bg">#22352E</color>
+    <color name="c_nav_bg">#162422</color>
     <color name="c_on_accent">#102B20</color>
     <color name="c_pressed">#3385DAB6</color>
 </resources>

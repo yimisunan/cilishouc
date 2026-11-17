@@ -148,23 +148,24 @@ public class SettingsActivity extends AppActivity {
         back.setVisibility(View.GONE);
         root.addView(back);
         LinearLayout content = Design.column(this);
-        Design.pad(this, content, 20, 8, 24);
+        Design.pad(this, content, 16, 4, 24);
         Design.section(this, content, "外观与习惯", null);
-        settingsRow(content, R.id.row_theme, "主题", R.drawable.ic_settings);
+        settingsRow(content, R.id.row_theme, "主题", R.drawable.ic_theme);
         settingsRow(content, R.id.row_trash, "回收站保留时间", R.drawable.ic_trash);
-        TextView anchor = Design.text(this, "备份与恢复", 20, R.color.c_text);
-        Design.gap(this, content, 24);
-        content.addView(anchor);
-        Design.gap(this, content, 12);
+
+        Design.section(this, content, "备份与恢复", "本地导出加密 .mjbf 文件，支持合并与回滚");
+        TextView anchor = (TextView) content.getChildAt(content.getChildCount() - 3);
         settingsPanel(content, R.id.tv_pwd_status);
         settingsRow(content, R.id.row_pwd, "设置备份密码", R.drawable.ic_lock);
         settingsRow(content, R.id.row_export, "导出加密备份", R.drawable.ic_import);
         settingsRow(content, R.id.row_restore, "从文件恢复", R.drawable.ic_restore);
+
         Design.section(this, content, "云端备份", "连接坚果云，保存加密后的备份文件");
         settingsPanel(content, R.id.tv_dav_status);
         settingsRow(content, R.id.row_dav, "连接坚果云", R.drawable.ic_link);
         settingsRow(content, R.id.row_cloud, "管理云端备份", R.drawable.ic_cloud);
         settingsRow(content, R.id.row_auto_backup, "每日自动备份", R.drawable.ic_history);
+
         Design.section(this, content, "更多", null);
         android.widget.Button advanced =
                 Design.button(this, "数据详情与恢复工具", R.drawable.ic_shield, false, () -> {});
@@ -179,7 +180,7 @@ public class SettingsActivity extends AppActivity {
         settingsPanel(tools, R.id.tv_audit);
         TextView note = Design.text(this, "", 13, R.color.c_text2);
         note.setId(R.id.tv_note);
-        Design.gap(this, tools, 16);
+        Design.gap(this, tools, 14);
         tools.addView(note);
         advanced.setOnClickListener(
                 v -> {
@@ -192,31 +193,36 @@ public class SettingsActivity extends AppActivity {
         setContentView(root);
         if ("backup".equals(getIntent().getStringExtra("section")))
             scroll.post(
-                    () -> scroll.smoothScrollTo(0, Math.max(0, anchor.getTop() - Ui.dp(this, 16))));
+                    () -> scroll.smoothScrollTo(0, Math.max(0, anchor.getTop() - Ui.dp(this, 12))));
     }
 
     private void settingsRow(LinearLayout content, int id, String label, int icon) {
         TextView row = Design.text(this, label, 15, R.color.c_text);
+        row.setTypeface(null, android.graphics.Typeface.BOLD);
         row.setId(id);
         row.setBackgroundResource(R.drawable.bg_card);
         row.setMinHeight(Ui.dp(this, 56));
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        Design.pad(this, row, 16, 16, 16);
+        Design.pad(this, row, 14, 14, 14);
         android.graphics.drawable.Drawable d = getDrawable(icon).mutate();
         d.setTint(Design.color(this, R.color.c_accent));
-        d.setBounds(0, 0, Ui.dp(this, 22), Ui.dp(this, 22));
-        row.setCompoundDrawablesRelative(d, null, null, null);
+        d.setBounds(0, 0, Ui.dp(this, 20), Ui.dp(this, 20));
+        android.graphics.drawable.Drawable chev = getDrawable(R.drawable.ic_chevron_right).mutate();
+        chev.setTint(Design.color(this, R.color.c_text2));
+        chev.setBounds(0, 0, Ui.dp(this, 18), Ui.dp(this, 18));
+        row.setCompoundDrawablesRelative(d, null, chev, null);
         row.setCompoundDrawablePadding(Ui.dp(this, 12));
         row.setFocusable(true);
+        row.setClickable(true);
         content.addView(row);
         Design.gap(this, content, 8);
     }
 
     private void settingsPanel(LinearLayout content, int id) {
-        TextView panel = Design.text(this, "", 14, R.color.c_text2);
+        TextView panel = Design.text(this, "", 13, R.color.c_text2);
         panel.setId(id);
         panel.setBackgroundResource(R.drawable.bg_card_soft);
-        Design.pad(this, panel, 16, 16, 16);
+        Design.pad(this, panel, 14, 12, 12);
         content.addView(panel);
         Design.gap(this, content, 8);
     }

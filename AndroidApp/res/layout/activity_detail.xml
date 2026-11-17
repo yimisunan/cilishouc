@@ -1,54 +1,464 @@
-<?xml version='1.0' encoding='utf-8'?>
-<LinearLayout xmlns:ns0="http://schemas.android.com/apk/res/android" ns0:layout_width="match_parent" ns0:layout_height="match_parent" ns0:background="@color/c_bg" ns0:orientation="vertical">
-    <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:background="@drawable/bg_header" ns0:gravity="center_vertical" ns0:orientation="horizontal" ns0:paddingTop="8dp" ns0:paddingBottom="8dp">
-        <ImageView ns0:id="@+id/btn_back" ns0:layout_width="48dp" ns0:layout_height="48dp" ns0:padding="12dp" ns0:src="@drawable/ic_back" ns0:tint="@color/c_header_text" ns0:background="?android:attr/selectableItemBackgroundBorderless" ns0:contentDescription="返回" ns0:minHeight="48dp" ns0:focusable="true" />
-        <ImageView ns0:layout_width="20dp" ns0:layout_height="20dp" ns0:src="@drawable/ic_cat" ns0:tint="@color/c_accent" ns0:importantForAccessibility="no" />
-        <TextView ns0:layout_width="0dp" ns0:layout_height="wrap_content" ns0:layout_marginLeft="8dp" ns0:layout_weight="1" ns0:letterSpacing="0" ns0:text="收藏详情" ns0:textColor="@color/c_header_text" ns0:textSize="16sp" ns0:textStyle="bold" />
-        <ImageView ns0:id="@+id/btn_edit" ns0:layout_width="48dp" ns0:layout_height="48dp" ns0:padding="12dp" ns0:src="@drawable/ic_edit" ns0:tint="@color/c_accent" ns0:background="?android:attr/selectableItemBackgroundBorderless" ns0:contentDescription="编辑收藏" ns0:minHeight="48dp" ns0:focusable="true" />
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/c_bg"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:background="@drawable/bg_header"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="返回"
+            android:focusable="true"
+            android:padding="12dp"
+            android:src="@drawable/ic_back"
+            android:tint="@color/c_text" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:layout_weight="1"
+            android:text="收藏详情"
+            android:textColor="@color/c_header_text"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/btn_star"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="星标"
+            android:focusable="true"
+            android:padding="12dp"
+            android:src="@drawable/ic_star_outline"
+            android:tint="@color/c_text2" />
+
+        <ImageView
+            android:id="@+id/btn_edit"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="编辑收藏"
+            android:focusable="true"
+            android:padding="12dp"
+            android:src="@drawable/ic_edit"
+            android:tint="@color/c_accent" />
     </LinearLayout>
-    <ScrollView ns0:layout_width="match_parent" ns0:layout_height="0dp" ns0:layout_weight="1" ns0:scrollbars="none">
-        <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:orientation="vertical" ns0:paddingLeft="14dp" ns0:paddingRight="14dp" ns0:paddingTop="12dp">
-            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
-                <TextView ns0:id="@+id/tv_title" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:textColor="@color/c_text" ns0:textSize="22sp" ns0:textStyle="bold" />
-                <TextView ns0:id="@+id/tv_meta" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
-            </LinearLayout>
-            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="16dp" ns0:orientation="horizontal">
-                <TextView ns0:id="@+id/btn_copy" ns0:layout_width="0dp" ns0:layout_height="64dp" ns0:layout_marginRight="8dp" ns0:layout_weight="1" ns0:background="@drawable/bg_btn_ghost" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_accent" ns0:drawableTop="@drawable/ic_copy" ns0:gravity="center" ns0:text="复制" ns0:textColor="@color/c_text" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
-                <TextView ns0:id="@+id/btn_share" ns0:layout_width="0dp" ns0:layout_height="64dp" ns0:layout_marginRight="8dp" ns0:layout_weight="1" ns0:background="@drawable/bg_btn_ghost" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_accent" ns0:drawableTop="@drawable/ic_open" ns0:gravity="center" ns0:text="分享" ns0:textColor="@color/c_text" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
-                <TextView ns0:id="@+id/btn_open" ns0:layout_width="0dp" ns0:layout_height="64dp" ns0:layout_weight="1" ns0:background="@drawable/bg_btn" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_accent" ns0:drawableTop="@drawable/ic_play" ns0:gravity="center" ns0:text="打开" ns0:textColor="@color/c_accent" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
-            </LinearLayout>
-            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
-                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:gravity="center_vertical" ns0:orientation="horizontal">
-                    <ImageView ns0:layout_width="14dp" ns0:layout_height="14dp" ns0:src="@drawable/ic_tag" ns0:tint="@color/c_accent2" ns0:importantForAccessibility="no" />
-                    <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginLeft="7dp" ns0:text="标签" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="14dp"
+            android:paddingTop="8dp"
+            android:paddingRight="14dp"
+            android:paddingBottom="28dp">
+
+            <!-- 标题与元信息卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/tv_proto_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_badge_magnet"
+                        android:paddingLeft="8dp"
+                        android:paddingTop="3dp"
+                        android:paddingRight="8dp"
+                        android:paddingBottom="3dp"
+                        android:text="BT 磁力"
+                        android:textColor="@color/c_accent"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_cat_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="8dp"
+                        android:background="@drawable/bg_tag_pill"
+                        android:paddingLeft="8dp"
+                        android:paddingTop="3dp"
+                        android:paddingRight="8dp"
+                        android:paddingBottom="3dp"
+                        android:text="未分类"
+                        android:textColor="@color/c_chip_text"
+                        android:textSize="11sp" />
                 </LinearLayout>
-                <TextView ns0:id="@+id/tv_tags" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text" ns0:textSize="13sp" />
-                <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:text="备注" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
-                <TextView ns0:id="@+id/tv_note" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text" ns0:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:breakStrategy="high_quality"
+                    android:hyphenationFrequency="none"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/c_text"
+                    android:textIsSelectable="true"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_meta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="2dp"
+                    android:textColor="@color/c_text2"
+                    android:textSize="12sp" />
             </LinearLayout>
-            <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
-                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:gravity="center_vertical" ns0:orientation="horizontal">
-                    <ImageView ns0:layout_width="14dp" ns0:layout_height="14dp" ns0:src="@drawable/ic_link" ns0:tint="@color/c_accent" ns0:importantForAccessibility="no" />
-                    <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginLeft="7dp" ns0:text="来源" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
+
+            <!-- 快捷操作条 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btn_copy"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="@color/c_accent"
+                    android:drawableTop="@drawable/ic_copy"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp"
+                    android:text="复制链接"
+                    android:textColor="@color/c_text"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btn_share"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_card"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="@color/c_accent"
+                    android:drawableTop="@drawable/ic_share"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp"
+                    android:text="分享"
+                    android:textColor="@color/c_text"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btn_open"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1.15"
+                    android:background="@drawable/bg_fab"
+                    android:drawablePadding="5dp"
+                    android:drawableTint="@color/c_on_accent"
+                    android:drawableTop="@drawable/ic_play"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="48dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="8dp"
+                    android:text="打开下载"
+                    android:textColor="@color/c_on_accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- 标签与备注卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_tag"
+                        android:tint="@color/c_accent2" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="7dp"
+                        android:text="标签（点击可按标签搜索）"
+                        android:textColor="@color/c_text2"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
-                <TextView ns0:id="@+id/tv_source" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="8dp" ns0:background="@drawable/bg_source_chip" ns0:padding="10dp" ns0:textColor="@color/c_accent" ns0:textIsSelectable="false" ns0:textSize="13sp" />
+
+                <com.magnetvault.app.ChipFlow
+                    android:id="@+id/tag_flow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tv_tags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/c_text2"
+                    android:textSize="13sp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="14dp"
+                    android:background="@color/c_divider" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_edit"
+                        android:tint="@color/c_text2" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="7dp"
+                        android:text="备注"
+                        android:textColor="@color/c_text2"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_note"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/c_text"
+                    android:textIsSelectable="true"
+                    android:textSize="14sp" />
             </LinearLayout>
-            <TextView ns0:id="@+id/detail_advanced" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:minHeight="52dp" ns0:padding="16dp" ns0:layout_marginTop="16dp" ns0:text="查看链接与技术信息" ns0:textColor="@color/c_accent" ns0:textSize="15sp" ns0:background="@drawable/bg_btn" ns0:focusable="true" />
-            <LinearLayout ns0:id="@+id/detail_raw" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:orientation="vertical" ns0:visibility="gone">
-                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
-                    <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:gravity="center_vertical" ns0:orientation="horizontal">
-                        <ImageView ns0:layout_width="15dp" ns0:layout_height="15dp" ns0:src="@drawable/ic_magnet" ns0:tint="@color/c_accent" ns0:importantForAccessibility="no" />
-                        <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:layout_marginLeft="7dp" ns0:letterSpacing="0" ns0:id="@+id/link_type_label" ns0:text="磁力链接" ns0:textColor="@color/c_accent" ns0:textSize="13sp" />
+
+            <!-- 来源卡片 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_link"
+                        android:tint="@color/c_accent" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="7dp"
+                        android:text="来源"
+                        android:textColor="@color/c_text2"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_source"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_source_chip"
+                    android:padding="10dp"
+                    android:textColor="@color/c_accent"
+                    android:textIsSelectable="false"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- 展开原始链接与技术信息 -->
+            <TextView
+                android:id="@+id/detail_advanced"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_btn"
+                android:drawableRight="@drawable/ic_chevron_down"
+                android:drawableTint="@color/c_accent"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="52dp"
+                android:paddingLeft="16dp"
+                android:paddingTop="14dp"
+                android:paddingRight="16dp"
+                android:paddingBottom="14dp"
+                android:text="查看链接与技术信息"
+                android:textColor="@color/c_accent"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/detail_raw"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="15dp"
+                            android:layout_height="15dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_magnet"
+                            android:tint="@color/c_accent" />
+
+                        <TextView
+                            android:id="@+id/link_type_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="7dp"
+                            android:text="磁力链接"
+                            android:textColor="@color/c_accent"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
-                    <TextView ns0:id="@+id/tv_magnet" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="8dp" ns0:background="@drawable/bg_card_soft" ns0:padding="10dp" ns0:textColor="@color/c_text" ns0:textIsSelectable="true" ns0:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/tv_magnet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_card_soft"
+                        android:fontFamily="monospace"
+                        android:padding="10dp"
+                        android:textColor="@color/c_text"
+                        android:textIsSelectable="true"
+                        android:textSize="12sp" />
                 </LinearLayout>
-                <LinearLayout ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="12dp" ns0:background="@drawable/bg_card" ns0:orientation="vertical" ns0:padding="14dp">
-                    <TextView ns0:layout_width="wrap_content" ns0:layout_height="wrap_content" ns0:letterSpacing="0" ns0:id="@+id/hash_type_label" ns0:text="INFO HASH" ns0:textColor="@color/c_text2" ns0:textSize="13sp" />
-                    <TextView ns0:id="@+id/tv_hash" ns0:layout_width="match_parent" ns0:layout_height="wrap_content" ns0:layout_marginTop="6dp" ns0:textColor="@color/c_text" ns0:textIsSelectable="true" ns0:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/hash_type_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="INFO HASH"
+                        android:textColor="@color/c_text2"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_hash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:fontFamily="monospace"
+                        android:textColor="@color/c_text"
+                        android:textIsSelectable="true"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </LinearLayout>
-            <TextView ns0:id="@+id/btn_delete" ns0:layout_width="match_parent" ns0:layout_height="54dp" ns0:layout_marginTop="10dp" ns0:background="@drawable/bg_danger" ns0:drawablePadding="4dp" ns0:drawableTint="@color/c_danger" ns0:drawableLeft="@drawable/ic_trash" ns0:gravity="center" ns0:text="删除（移入回收站）" ns0:textColor="@color/c_danger" ns0:textSize="13sp" ns0:minHeight="48dp" ns0:focusable="true" />
-            <View ns0:layout_width="match_parent" ns0:layout_height="26dp" />
+
+            <TextView
+                android:id="@+id/btn_delete"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_danger"
+                android:drawableLeft="@drawable/ic_trash"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/c_danger"
+                android:focusable="true"
+                android:gravity="center"
+                android:minHeight="48dp"
+                android:paddingLeft="18dp"
+                android:paddingRight="18dp"
+                android:text="移入回收站"
+                android:textColor="@color/c_danger"
+                android:textSize="14sp"
+                android:textStyle="bold" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

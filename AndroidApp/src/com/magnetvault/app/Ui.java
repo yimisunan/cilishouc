@@ -194,27 +194,36 @@ public final class Ui {
             final int[] icons,
             final DialogInterface.OnClickListener onPick) {
         final Dialog dialog = new Dialog(act, R.style.SheetDialog);
+        dialog.setCanceledOnTouchOutside(true);
         LinearLayout root = new LinearLayout(act);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundResource(R.drawable.bg_sheet);
-        root.setPadding(dp(act, 12), dp(act, 8), dp(act, 12), dp(act, 14));
+        root.setPadding(dp(act, 14), dp(act, 10), dp(act, 14), dp(act, 18));
 
         // 顶部小抓手
         View handle = new View(act);
-        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(dp(act, 36), dp(act, 4));
+        LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(dp(act, 38), dp(act, 4));
         hp.gravity = Gravity.CENTER_HORIZONTAL;
-        hp.topMargin = dp(act, 4);
-        hp.bottomMargin = dp(act, 12);
-        handle.setBackgroundResource(R.drawable.bg_accent_bar);
+        hp.topMargin = dp(act, 2);
+        hp.bottomMargin = dp(act, 14);
+        android.graphics.drawable.GradientDrawable hd =
+                new android.graphics.drawable.GradientDrawable();
+        hd.setColor(act.getResources().getColor(R.color.c_line));
+        hd.setCornerRadius(dp(act, 2));
+        handle.setBackground(hd);
         root.addView(handle, hp);
 
-        TextView head = new TextView(act);
-        head.setText(title == null ? "" : title);
-        head.setTextSize(18);
-        head.setTextColor(act.getResources().getColor(R.color.c_text));
-        head.setTypeface(null, android.graphics.Typeface.BOLD);
-        head.setPadding(dp(act, 8), 0, dp(act, 8), dp(act, 10));
-        root.addView(head);
+        if (title != null && title.trim().length() > 0) {
+            TextView head = new TextView(act);
+            head.setText(title);
+            head.setTextSize(17);
+            head.setTextColor(act.getResources().getColor(R.color.c_text));
+            head.setTypeface(null, android.graphics.Typeface.BOLD);
+            head.setMaxLines(2);
+            head.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            head.setPadding(dp(act, 6), 0, dp(act, 6), dp(act, 12));
+            root.addView(head);
+        }
 
         LinearLayout list = new LinearLayout(act);
         list.setOrientation(LinearLayout.VERTICAL);
@@ -223,39 +232,48 @@ public final class Ui {
             LinearLayout row = new LinearLayout(act);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(dp(act, 14), dp(act, 16), dp(act, 14), dp(act, 16));
-            row.setMinimumHeight(dp(act, 56));
+            row.setPadding(dp(act, 12), dp(act, 12), dp(act, 14), dp(act, 12));
+            row.setMinimumHeight(dp(act, 54));
             row.setFocusable(true);
+            row.setClickable(true);
             row.setContentDescription(labels[i]);
             row.setBackground(act.getDrawable(R.drawable.bg_card_soft));
             LinearLayout.LayoutParams rp =
                     new LinearLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT);
-            rp.bottomMargin = dp(act, 6);
+            rp.bottomMargin = dp(act, 8);
             row.setLayoutParams(rp);
 
-            ImageView iv = new ImageView(act);
-            LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(act, 18), dp(act, 18));
-            iv.setLayoutParams(ip);
-            iv.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-            if (icons != null && i < icons.length && icons[i] != 0) {
-                iv.setImageResource(icons[i]);
-            }
             boolean danger =
                     labels[i].startsWith("删除")
                             || labels[i].contains("移入回收站")
-                            || labels[i].startsWith("清空");
-            iv.setColorFilter(
-                    act.getResources().getColor(danger ? R.color.c_danger : R.color.c_accent));
-            row.addView(iv);
+                            || labels[i].startsWith("清空")
+                            || labels[i].startsWith("永久");
+
+            int iconRes = (icons != null && i < icons.length) ? icons[i] : 0;
+            if (iconRes != 0) {
+                View badge =
+                        Design.iconBadge(
+                                act,
+                                iconRes,
+                                act.getResources().getColor(danger ? R.color.c_danger : R.color.c_accent),
+                                act.getResources()
+                                        .getColor(danger ? R.color.c_danger_soft : R.color.c_accent_soft),
+                                34,
+                                18);
+                LinearLayout.LayoutParams bp = (LinearLayout.LayoutParams) badge.getLayoutParams();
+                bp.rightMargin = dp(act, 12);
+                row.addView(badge, bp);
+            }
 
             TextView tv = new TextView(act);
             tv.setText(labels[i]);
-            tv.setTextSize(16);
+            tv.setTextSize(15);
+            tv.setTypeface(null, android.graphics.Typeface.BOLD);
             tv.setTextColor(
                     act.getResources().getColor(danger ? R.color.c_danger : R.color.c_text));
-            tv.setPadding(dp(act, 12), 0, 0, 0);
+            if (iconRes == 0) tv.setPadding(dp(act, 4), 0, 0, 0);
             LinearLayout.LayoutParams tp =
                     new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             tv.setLayoutParams(tp);
@@ -284,7 +302,7 @@ public final class Ui {
         sc.setLayoutParams(
                 new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
-                        Math.min(maxHeight - dp(act, 90), labels.length * dp(act, 76))));
+                        Math.min(maxHeight - dp(act, 96), labels.length * dp(act, 68))));
         dialog.setContentView(root);
         Window w = dialog.getWindow();
         if (w != null) {
