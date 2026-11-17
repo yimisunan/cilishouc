@@ -63,13 +63,17 @@ jobs:
               output.write(f'name={version}\ncode={code}\ntag=v{version}\n')
           PY
 
-      - name: Install Android build tools
+      - name: Install Android SDK and build tools
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platforms;android-30 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+
+      - name: Configure Android tool paths
         run: |
           set -euo pipefail
-          sdkmanager 'platforms;android-30' 'build-tools;35.0.0' >/dev/null
-          sdk_root="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-          echo "MV_ANDROID_JAR=$sdk_root/platforms/android-30/android.jar" >> "$GITHUB_ENV"
-          echo "MV_BUILD_TOOLS=$sdk_root/build-tools/35.0.0" >> "$GITHUB_ENV"
+          echo "MV_ANDROID_JAR=$ANDROID_HOME/platforms/android-30/android.jar" >> "$GITHUB_ENV"
+          echo "MV_BUILD_TOOLS=$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_ENV"
 
       - name: Build with the original release signature
         env:
