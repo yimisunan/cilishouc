@@ -1,50 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generated from ill_empty_vault.svg; edit the SVG source and re-run svg2vd.py -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="140dp"
     android:height="140dp"
     android:viewportWidth="140"
     android:viewportHeight="140">
+    <!-- Moonlit halo backdrop -->
     <path
-        android:pathData="M18,72 a52,52 0 1,0 104,0 a52,52 0 1,0 -104,0 Z"
-        android:fillColor="@color/c_accent_soft" />
+        android:fillColor="@color/c_accent_soft"
+        android:pathData="M20,72 a50,50 0 1,0 100,0 a50,50 0 1,0 -100,0 Z" />
+    <!-- Crescent moon in upper right -->
     <path
-        android:pathData="M102,36 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 Z"
-        android:fillColor="@color/c_accent2_soft" />
+        android:fillColor="@color/c_star"
+        android:pathData="M96,26 A12,12 0 1,0 112,42 A9.5,9.5 0 1,1 96,26 Z" />
+    <!-- Sleek rooftop / vault pedestal -->
     <path
-        android:pathData="M20,48 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z"
-        android:fillColor="@color/c_star_soft" />
-    <path
-        android:pathData="M42,42 h56 a14,14 0 0,1 14,14 v30 a14,14 0 0,1 -14,14 h-56 a14,14 0 0,1 -14,-14 v-30 a14,14 0 0,1 14,-14 Z"
         android:fillColor="@color/c_card"
+        android:pathData="M26,104 H114 A4,4 0 0,1 118,108 V112 A4,4 0 0,1 114,116 H26 A4,4 0 0,1 22,112 V108 A4,4 0 0,1 26,104 Z"
         android:strokeColor="@color/c_line"
-        android:strokeWidth="2" />
+        android:strokeWidth="1.8" />
+    <!-- Curled sinuous cat tail hanging off the pedestal -->
     <path
-        android:pathData="M41,53 h32 a3,3 0 0,1 3,3 v0 a3,3 0 0,1 -3,3 h-32 a3,3 0 0,1 -3,-3 v0 a3,3 0 0,1 3,-3 Z"
-        android:fillColor="@color/c_card2" />
+        android:pathData="M84,100 C102,102 110,116 98,124 C90,129 82,123 86,117"
+        android:strokeColor="@color/c_cat_fur"
+        android:strokeLineCap="round"
+        android:strokeWidth="7" />
     <path
-        android:pathData="M40.5,65 h19 a2.5,2.5 0 0,1 2.5,2.5 v0 a2.5,2.5 0 0,1 -2.5,2.5 h-19 a2.5,2.5 0 0,1 -2.5,-2.5 v0 a2.5,2.5 0 0,1 2.5,-2.5 Z"
-        android:fillColor="@color/c_divider" />
+        android:pathData="M84,100 C102,102 110,116 98,124"
+        android:strokeColor="@color/c_cat_fur_edge"
+        android:strokeLineCap="round"
+        android:strokeWidth="1.5" />
+    <!-- Aloof Perched Noir Cat Body -->
     <path
-        android:pathData="M72,70 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0 Z"
-        android:fillColor="@color/c_accent_soft" />
+        android:fillColor="@color/c_cat_fur"
+        android:pathData="M46,104 C44,82 50,66 64,64 C78,64 88,78 88,104 Z"
+        android:strokeColor="@color/c_cat_fur_edge"
+        android:strokeWidth="1.8" />
+    <!-- Cat Head looking back coldly over shoulder -->
     <path
-        android:pathData="M81.5 64.5v5.8a6.5 6.5 0 0 0 13 0v-5.8"
+        android:fillColor="@color/c_cat_fur"
+        android:pathData="M44,50 L44,28 L52,34 L49.5,37.5 L53.5,35.5 L57,38 H71 L82,28 V50 C82,62 74,69 63,69 C52,69 44,62 44,50 Z"
+        android:strokeColor="@color/c_cat_fur_edge"
+        android:strokeLineJoin="round"
+        android:strokeWidth="1.8" />
+    <!-- Heterochromia Slit Eyes (Ice-Cyan + Amber) -->
+    <path
+        android:fillColor="@color/c_cat_eye_left"
+        android:pathData="M49.5,49.5 L59.5,52 L57.5,55.8 L50.5,53.5 Z" />
+    <path
+        android:fillColor="@color/c_cat_fur"
+        android:pathData="M54.5,50.5 L55.3,53.2 L54.3,55.0 L53.5,52.8 Z" />
+    <path
+        android:fillColor="@color/c_cat_eye_right"
+        android:pathData="M76.5,49.5 L66.5,52 L68.5,55.8 L75.5,53.5 Z" />
+    <path
+        android:fillColor="@color/c_cat_fur"
+        android:pathData="M71.5,50.5 L70.7,53.2 L71.7,55.0 L72.5,52.8 Z" />
+    <!-- Floating glowing magnet beside cat -->
+    <path
+        android:pathData="M27,72 V80 A6.5,6.5 0 0,0 40,80 V72"
         android:strokeColor="@color/c_accent"
-        android:strokeWidth="3.2"
-        android:strokeLineCap="round" />
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
     <path
-        android:pathData="M80 64.5h3M93 64.5h3"
+        android:pathData="M25.5,72 H28.5 M38.5,72 H41.5"
         android:strokeColor="@color/c_accent2"
-        android:strokeWidth="2.6"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M108 24l1.4 3.6 3.6 1.4-3.6 1.4-1.4 3.6-1.4-3.6-3.6-1.4 3.6-1.4z"
-        android:fillColor="@color/c_accent2" />
-    <path
-        android:pathData="M35,86 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 Z"
-        android:fillColor="@color/c_star" />
-    <path
-        android:pathData="M47.5,83.5 h15 a2.5,2.5 0 0,1 2.5,2.5 v0 a2.5,2.5 0 0,1 -2.5,2.5 h-15 a2.5,2.5 0 0,1 -2.5,-2.5 v0 a2.5,2.5 0 0,1 2.5,-2.5 Z"
-        android:fillColor="@color/c_star_soft" />
+        android:strokeLineCap="round"
+        android:strokeWidth="2.8" />
 </vector>

@@ -62,10 +62,10 @@ public final class ThemePrefs {
     public static String themeLabel(Context ctx) {
         int mode = getMode(ctx);
         if (mode == LIGHT) {
-            return "浅色";
+            return "霜银浅色";
         }
         if (mode == DARK) {
-            return "深色";
+            return "暗夜黑曜";
         }
         return "跟随系统";
     }

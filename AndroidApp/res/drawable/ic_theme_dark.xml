@@ -4,29 +4,25 @@
     android:height="42dp"
     android:viewportWidth="56"
     android:viewportHeight="42">
+    <!-- Abyssal Obsidian background -->
     <path
-        android:fillColor="#101B1A"
-        android:pathData="M8,2 H48 Q54,2 54,8 V34 Q54,40 48,40 H8 Q2,40 2,34 V8 Q2,2 8,2 Z" />
-    <path
-        android:fillColor="#1B2A28"
-        android:pathData="M9,7 H47 Q49,7 49,9 V21 Q49,23 47,23 H9 Q7,23 7,21 V9 Q7,7 9,7 Z" />
-    <path
-        android:fillColor="#85DAB6"
-        android:pathData="M11,11 H24 V14 H11 Z" />
-    <path
-        android:fillColor="#AEC2BA"
-        android:pathData="M11,17 H42 V19.2 H11 Z" />
-    <path
-        android:fillColor="#1B2A28"
-        android:pathData="M9,26 H47 Q49,26 49,28 V34 Q49,36 47,36 H9 Q7,36 7,34 V28 Q7,26 9,26 Z" />
-    <path
-        android:fillColor="#244B3C"
-        android:pathData="M11,29.5 H16 V32.5 H11 Z" />
-    <path
-        android:fillColor="#4D685D"
-        android:pathData="M19,30 H41 V32 H19 Z" />
-    <path
+        android:fillColor="#080B11"
         android:pathData="M8,2 H48 Q54,2 54,8 V34 Q54,40 48,40 H8 Q2,40 2,34 V8 Q2,2 8,2 Z"
-        android:strokeColor="@color/c_divider"
-        android:strokeWidth="1.4" />
+        android:strokeColor="#2D3C56"
+        android:strokeWidth="1.5" />
+    <path
+        android:fillColor="#121926"
+        android:pathData="M8,7 H48 Q50,7 50,9 V33 Q50,35 48,35 H8 Q6,35 6,33 V9 Q6,7 8,7 Z" />
+    <!-- Obsidian Night Cat Head -->
+    <path
+        android:fillColor="#06080E"
+        android:pathData="M17,23 L17,11 L23,15 H33 L39,11 V23 C39,29.5 34,33 28,33 C22,33 17,29.5 17,23 Z"
+        android:strokeColor="#314463"
+        android:strokeWidth="1.2" />
+    <path
+        android:fillColor="#2CE5D8"
+        android:pathData="M20.5,21 L26,22.5 L24.8,24.8 L21,23.2 Z" />
+    <path
+        android:fillColor="#F5B841"
+        android:pathData="M35.5,21 L30,22.5 L31.2,24.8 L35,23.2 Z" />
 </vector>

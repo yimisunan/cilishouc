@@ -95,6 +95,21 @@ public final class Ui {
         return true;
     }
 
+    /** 读取剪贴板当前文本；为空或不可用时返回 null。 */
+    public static String clipboard(Context ctx) {
+        try {
+            ClipboardManager cm =
+                    (ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (cm == null || !cm.hasPrimaryClip()) return null;
+            ClipData data = cm.getPrimaryClip();
+            if (data == null || data.getItemCount() == 0) return null;
+            CharSequence text = data.getItemAt(0).coerceToText(ctx);
+            return text == null ? null : text.toString();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
     /** MoePal（自动识别剪贴板里的链接并下载）。 */
     public static final String MOEPAL_PKG = "com.moecloud.helper";
 
@@ -791,29 +806,29 @@ public final class Ui {
         header.addView(ill, ip);
 
         LinearLayout copy = Design.column(act);
-        TextView head = Design.text(act, "使用指南 · 快速上手", 18, R.color.c_text);
+        TextView head = Design.text(act, "黑猫狩猎指南 · 操控秘籍", 18, R.color.c_text);
         head.setTypeface(null, Typeface.BOLD);
         copy.addView(head);
         Design.gap(act, copy, 2);
-        copy.addView(Design.text(act, "本地离线加密管理，极简高效的收藏流程", 12, R.color.c_text2));
+        copy.addView(Design.text(act, "动静结合异瞳视觉 · 极速单手操控与离线加密", 12, R.color.c_text2));
         header.addView(copy, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(header);
         Design.gap(act, root, 12);
 
         String[][] items = {
-            {"智能粘贴与双模式录入", "右下角点「添加」可在「批量智能识别」与「单条精细录入」之间随心切换，支持带表格或文字块的文本导入。", "0"},
-            {"聚焦浏览与轻点展开", "列表自动提炼番号、分辨率与编码标签；轻点任意收藏卡片即可展开完整标题、备注与操作按钮。", "1"},
-            {"分类文件夹与标签整理", "在「整理」页可一站式建多级文件夹、改名改色、拖拽移动位置，以及重命名或合并标签。", "2"},
-            {"长按多选批量处理", "长按任意条目进入多选模式，一次完成跨文件夹移动、批量加标签、批量星标或移入回收站。", "3"},
-            {"一键复制到 MoePal 下载", "点击卡片内的「打开」或「复制」都会安全复制链接并唤起关联下载工具。", "4"},
-            {"零知识加密本地 / 云端备份", "导出加密 .mjbf 文件或绑定坚果云（WebDAV）每日自动备份，恢复前自动留快照可随时撤回。", "5"}
+            {"一键「闪贴」与双模捕猎", "搜索栏右侧点击「闪贴」（或长按顶部猫头 / 右下角「捕猎」按钮）即可瞬间抓取剪贴板中的磁力与 ED2K 链接，自动识别去重。", "0"},
+            {"轻点左侧猫爪徽章秒进多选", "无需漫长等待长按，直接轻点任意卡片左侧的协议徽章即可唤出猫爪印记、进入批量多选模式。", "1"},
+            {"卡片内联归档与速改标签", "轻点卡片展开后，在「分类 / 标签」内联胶囊条上直接点按，即可就地完成文件夹移动与标签增删，无需跳转编辑页。", "2"},
+            {"点按复制 · 长按直达下载", "卡片右侧复制按钮：轻点安全复制链接；长按该按钮可直接唤起 MoePal 等外部下载器。", "3"},
+            {"异瞳黑猫动静结合交互", "滑动列表时黑猫冰青与琥珀双瞳会随手势上下巡视；多选时自动切换狩猎细竖瞳；轻点黑猫可触发眨眼、抖耳与暗语切换。", "4"},
+            {"零知识加密本地 / 云端同步", "支持导出 AES-GCM 加密 .mjbf 文件或绑定坚果云（WebDAV）自动备份，恢复前自动留快照可一键回滚。", "5"}
         };
         int[] icons = {
-            R.drawable.ic_sparkle,
-            R.drawable.ic_magnet,
+            R.drawable.ic_paste,
+            R.drawable.ic_paw,
             R.drawable.ic_folder,
-            R.drawable.ic_check,
             R.drawable.ic_play,
+            R.drawable.ic_cat_eye,
             R.drawable.ic_shield_ok
         };
 

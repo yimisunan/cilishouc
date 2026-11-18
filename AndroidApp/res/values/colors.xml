@@ -1,28 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="c_bg">#F5F7F7</color>
+    <!-- 极地冷银 · 霜瞳猫 (Frost Titanium & Obsidian Noir) -->
+    <color name="c_bg">#EEF2F7</color>
     <color name="c_card">#FFFFFF</color>
-    <color name="c_card2">#EEF3F2</color>
-    <color name="c_text">#182C2B</color>
-    <color name="c_text2">#526965</color>
-    <color name="c_divider">#DDE6E3</color>
-    <color name="c_line">#C8D6D1</color>
-    <color name="c_header">#F5F7F7</color>
-    <color name="c_header_text">#182C2B</color>
-    <color name="c_header_sub">#526965</color>
-    <color name="c_chip_bg">#EDF3F0</color>
-    <color name="c_chip_stroke">#C8D6D1</color>
-    <color name="c_chip_text">#435D56</color>
-    <color name="c_accent">#087B68</color>
-    <color name="c_accent2">#6054A5</color>
-    <color name="c_accent_soft">#DAEFE6</color>
-    <color name="c_accent2_soft">#ECE9FA</color>
-    <color name="c_danger">#B83C48</color>
-    <color name="c_danger_soft">#FCECEE</color>
-    <color name="c_star">#B87700</color>
-    <color name="c_star_soft">#FFF2D4</color>
-    <color name="c_search_bg">#E9EFEC</color>
-    <color name="c_nav_bg">#FFFFFF</color>
+    <color name="c_card2">#E3EAF3</color>
+    <color name="c_text">#0C121E</color>
+    <color name="c_text2">#53647B</color>
+    <color name="c_divider">#D6E0EC</color>
+    <color name="c_line">#B6C6DB</color>
+    <color name="c_header">#EEF2F7</color>
+    <color name="c_header_text">#0C121E</color>
+    <color name="c_header_sub">#53647B</color>
+    <color name="c_chip_bg">#E6EDF6</color>
+    <color name="c_chip_stroke">#C4D2E3</color>
+    <color name="c_chip_text">#2E4057</color>
+    <color name="c_accent">#007A8E</color>
+    <color name="c_accent2">#5A4AD1</color>
+    <color name="c_accent_soft">#D9F2F6</color>
+    <color name="c_accent2_soft">#EAE7FA</color>
+    <color name="c_danger">#C8324B</color>
+    <color name="c_danger_soft">#FCE7EB</color>
+    <color name="c_star">#C67D00</color>
+    <color name="c_star_soft">#FFF0D1</color>
+    <color name="c_search_bg">#E2E9F2</color>
+    <color name="c_nav_bg">#F9FBFE</color>
     <color name="c_on_accent">#FFFFFF</color>
-    <color name="c_pressed">#1F087B68</color>
+    <color name="c_pressed">#22007A8E</color>
+
+    <!-- 异瞳黑猫专属视觉色板 (Noir Cat & Heterochromia Eyes) -->
+    <color name="c_cat_stage_bg">#0D131F</color>
+    <color name="c_cat_stage_bg2">#172234</color>
+    <color name="c_cat_stage_border">#283852</color>
+    <color name="c_cat_stage_text">#EDF4FC</color>
+    <color name="c_cat_stage_sub">#92A5BE</color>
+    <color name="c_cat_fur">#090D15</color>
+    <color name="c_cat_fur_edge">#2E3F5B</color>
+    <color name="c_cat_ear_inner">#1A2C3B</color>
+    <color name="c_cat_eye_left">#2CE5D8</color>
+    <color name="c_cat_eye_right">#F5B841</color>
 </resources>

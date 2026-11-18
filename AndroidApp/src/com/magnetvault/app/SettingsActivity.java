@@ -14,7 +14,7 @@ import java.util.List;
 /** 外观与偏好设置：主题卡片切换、列表排版密度、回收站保留时间、以及常用功能快捷跳转。 */
 public class SettingsActivity extends AppActivity {
 
-    private static final String[] THEME_NAMES = {"跟随系统", "浅色", "深色"};
+    private static final String[] THEME_NAMES = {"跟随系统", "霜银浅色", "暗夜黑曜"};
     private static final int[] THEME_ICONS = {
         R.drawable.ic_theme_auto, R.drawable.ic_theme_light, R.drawable.ic_theme_dark
     };
@@ -79,7 +79,7 @@ public class SettingsActivity extends AppActivity {
         Design.pad(this, content, 16, 4, 28);
 
         // 1. 主题模式三选一视觉卡片
-        Design.section(this, content, "主题外观", "随时切换浅色或护眼深色模式");
+        Design.section(this, content, "主题外观", "异瞳黑猫视觉系统：霜银浅色与暗夜黑曜自由切换");
         LinearLayout themeRow = Design.row(this);
         int curMode = ThemePrefs.getMode(this);
         for (int i = 0; i < THEME_NAMES.length; i++) {

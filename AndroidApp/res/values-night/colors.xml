@@ -1,28 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="c_bg">#101B1A</color>
-    <color name="c_card">#1B2A28</color>
-    <color name="c_card2">#152320</color>
-    <color name="c_text">#E6F1ED</color>
-    <color name="c_text2">#AEC2BA</color>
-    <color name="c_divider">#30453D</color>
-    <color name="c_line">#4D685D</color>
-    <color name="c_header">#101B1A</color>
-    <color name="c_header_text">#E6F1ED</color>
-    <color name="c_header_sub">#AEC2BA</color>
-    <color name="c_chip_bg">#22362E</color>
-    <color name="c_chip_stroke">#4D685D</color>
-    <color name="c_chip_text">#BCD1C7</color>
-    <color name="c_accent">#85DAB6</color>
-    <color name="c_accent2">#C5B9F0</color>
-    <color name="c_accent_soft">#244B3C</color>
-    <color name="c_accent2_soft">#2E284D</color>
-    <color name="c_danger">#FFABB3</color>
-    <color name="c_danger_soft">#3E2228</color>
-    <color name="c_star">#EEC87C</color>
-    <color name="c_star_soft">#3D321D</color>
-    <color name="c_search_bg">#22352E</color>
-    <color name="c_nav_bg">#162422</color>
-    <color name="c_on_accent">#102B20</color>
-    <color name="c_pressed">#3385DAB6</color>
+    <!-- 暗夜黑曜 · 夜行猫 (Abyssal Obsidian & Ice-Cyan Slit Eye) -->
+    <color name="c_bg">#080B11</color>
+    <color name="c_card">#111722</color>
+    <color name="c_card2">#171F2E</color>
+    <color name="c_text">#ECF2FA</color>
+    <color name="c_text2">#8899B0</color>
+    <color name="c_divider">#1E283A</color>
+    <color name="c_line">#2D3C56</color>
+    <color name="c_header">#080B11</color>
+    <color name="c_header_text">#ECF2FA</color>
+    <color name="c_header_sub">#8899B0</color>
+    <color name="c_chip_bg">#161F2E</color>
+    <color name="c_chip_stroke">#2C3B54</color>
+    <color name="c_chip_text">#B6C6DC</color>
+    <color name="c_accent">#2CE5D8</color>
+    <color name="c_accent2">#9E8CFF</color>
+    <color name="c_accent_soft">#112D35</color>
+    <color name="c_accent2_soft">#201D3A</color>
+    <color name="c_danger">#FF6E85</color>
+    <color name="c_danger_soft">#361822</color>
+    <color name="c_star">#F5B841</color>
+    <color name="c_star_soft">#332712</color>
+    <color name="c_search_bg">#131B28</color>
+    <color name="c_nav_bg">#0D121C</color>
+    <color name="c_on_accent">#05181A</color>
+    <color name="c_pressed">#332CE5D8</color>
+
+    <!-- 异瞳黑猫专属视觉色板 (Noir Cat & Heterochromia Eyes) -->
+    <color name="c_cat_stage_bg">#0B101A</color>
+    <color name="c_cat_stage_bg2">#141E30</color>
+    <color name="c_cat_stage_border">#25354E</color>
+    <color name="c_cat_stage_text">#EFF5FC</color>
+    <color name="c_cat_stage_sub">#8FA2BC</color>
+    <color name="c_cat_fur">#06080E</color>
+    <color name="c_cat_fur_edge">#314463</color>
+    <color name="c_cat_ear_inner">#182B3A</color>
+    <color name="c_cat_eye_left">#2CE5D8</color>
+    <color name="c_cat_eye_right">#F5B841</color>
 </resources>

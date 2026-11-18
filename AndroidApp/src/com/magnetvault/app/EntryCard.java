@@ -1,6 +1,7 @@
 package com.magnetvault.app;
 
 import android.app.Activity;
+import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,16 +28,49 @@ public final class EntryCard {
         void onDetail(Entry entry);
 
         void onMore(Entry entry);
+
+        default void onBadgeSelect(Entry entry) {
+            onMore(entry);
+        }
+
+        default void onQuickFolder(Entry entry) {
+            onDetail(entry);
+        }
+
+        default void onQuickTag(Entry entry) {
+            onDetail(entry);
+        }
     }
 
     public static final class Holder {
-        final View card, badge, focusRow, actions, actOpen, actCopy, actStar, actDetail, actMore;
+        final View card,
+                stripe,
+                badge,
+                focusRow,
+                actions,
+                actFolder,
+                actTag,
+                actOpen,
+                actCopy,
+                actStar,
+                actDetail,
+                actMore;
         final LinearLayout contentCol;
         final ImageView icon, starMark, chev, copyBtn, actStarIcon;
-        final TextView code, spec1, spec2, title, proto, sub, note, actStarLabel;
+        final TextView code,
+                spec1,
+                spec2,
+                title,
+                proto,
+                sub,
+                note,
+                actFolderLabel,
+                actTagLabel,
+                actStarLabel;
 
         Holder(View root) {
             card = root.findViewById(R.id.entry_card);
+            stripe = root.findViewById(R.id.item_stripe);
             badge = root.findViewById(R.id.item_badge);
             icon = root.findViewById(R.id.item_icon);
             contentCol = root.findViewById(R.id.item_content_col);
@@ -52,6 +86,10 @@ public final class EntryCard {
             note = root.findViewById(R.id.item_note);
             copyBtn = root.findViewById(R.id.item_copy);
             actions = root.findViewById(R.id.item_actions);
+            actFolder = root.findViewById(R.id.act_folder);
+            actFolderLabel = root.findViewById(R.id.act_folder_label);
+            actTag = root.findViewById(R.id.act_tag);
+            actTagLabel = root.findViewById(R.id.act_tag_label);
             actOpen = root.findViewById(R.id.act_open);
             actCopy = root.findViewById(R.id.act_copy);
             actStar = root.findViewById(R.id.act_star);
@@ -67,7 +105,10 @@ public final class EntryCard {
     public static View inflate(Activity act, ViewGroup parent) {
         View view = act.getLayoutInflater().inflate(R.layout.item_entry, parent, false);
         Holder h = new Holder(view);
+        Design.tactile(h.badge);
         Design.tactile(h.copyBtn);
+        Design.tactile(h.actFolder);
+        Design.tactile(h.actTag);
         Design.tactile(h.actOpen);
         Design.tactile(h.actCopy);
         Design.tactile(h.actStar);
@@ -91,11 +132,24 @@ public final class EntryCard {
         boolean ed2k = MagnetParser.isEd2k(e.magnet);
         boolean showExpanded = !selecting && expanded;
 
-        // Card background & selection badge
+        // Left cold-light stripe color: Amber for picked/starred, Violet for ED2K, Ice-Cyan for BT
+        int stripeColor =
+                Design.color(
+                        act,
+                        (picked || e.starred)
+                                ? R.color.c_star
+                                : (ed2k ? R.color.c_accent2 : R.color.c_accent));
+        GradientDrawable stripeBg = new GradientDrawable();
+        stripeBg.setColor(stripeColor);
+        stripeBg.setCornerRadius(Ui.dp(act, 3));
+        h.stripe.setBackground(stripeBg);
+
+        // Card background & tappable claw/protocol badge
         h.card.setBackgroundResource(picked ? R.drawable.bg_card_selected : R.drawable.bg_card);
         if (selecting) {
-            h.badge.setBackgroundResource(R.drawable.bg_badge_magnet);
-            h.icon.setImageResource(picked ? R.drawable.ic_check : R.drawable.ic_circle);
+            h.badge.setBackgroundResource(
+                    picked ? R.drawable.bg_badge_magnet : R.drawable.bg_card_soft);
+            h.icon.setImageResource(picked ? R.drawable.ic_paw : R.drawable.ic_circle);
             h.icon.setColorFilter(Design.color(act, picked ? R.color.c_accent : R.color.c_text2));
         } else {
             h.badge.setBackgroundResource(
@@ -104,6 +158,12 @@ public final class EntryCard {
             h.icon.setColorFilter(
                     Design.color(act, ed2k ? R.color.c_accent2 : R.color.c_accent));
         }
+        h.badge.setContentDescription(selecting ? "切换选中" : "轻点开启多选");
+        h.badge.setOnClickListener(
+                v -> {
+                    Design.popBounce(h.badge);
+                    listener.onBadgeSelect(e);
+                });
         view.setSelected(picked);
 
         // Title & focus parsing
@@ -176,7 +236,7 @@ public final class EntryCard {
             h.sub.setEllipsize(TextUtils.TruncateAt.END);
         }
 
-        // Expand chevron & quick copy button
+        // Expand chevron & quick copy button (tap = copy, long-press = open in MoePal)
         LinearLayout.LayoutParams cp = (LinearLayout.LayoutParams) h.contentCol.getLayoutParams();
         if (selecting) {
             h.copyBtn.setVisibility(View.GONE);
@@ -184,15 +244,25 @@ public final class EntryCard {
             cp.rightMargin = Ui.dp(act, 6);
         } else {
             h.copyBtn.setVisibility(View.VISIBLE);
-            h.copyBtn.setContentDescription("复制链接 " + rawTitle);
-            h.copyBtn.setOnClickListener(v -> listener.onCopy(e));
+            h.copyBtn.setContentDescription("复制链接（长按打开下载） " + rawTitle);
+            h.copyBtn.setOnClickListener(
+                    v -> {
+                        Design.popBounce(h.copyBtn);
+                        listener.onCopy(e);
+                    });
+            h.copyBtn.setOnLongClickListener(
+                    v -> {
+                        Design.popBounce(h.copyBtn);
+                        listener.onOpen(e);
+                        return true;
+                    });
             h.chev.setVisibility(View.VISIBLE);
             Design.rotateTo(h.chev, showExpanded ? 180f : 0f);
             cp.rightMargin = Ui.dp(act, 2);
         }
         h.contentCol.setLayoutParams(cp);
 
-        // Expanded note & inline action bar
+        // Expanded note & inline dossier/action bar
         if (showExpanded && !TextUtils.isEmpty(e.note)) {
             h.note.setVisibility(View.VISIBLE);
             h.note.setText("备注：" + e.note.trim());
@@ -202,6 +272,17 @@ public final class EntryCard {
 
         if (showExpanded) {
             h.actions.setVisibility(View.VISIBLE);
+            String folderName =
+                    (e.categoryId == null || TextUtils.isEmpty(e.categoryName))
+                            ? "未归档 · 点击归类"
+                            : e.categoryName;
+            h.actFolderLabel.setText(folderName);
+            h.actFolder.setOnClickListener(v -> listener.onQuickFolder(e));
+
+            String tagText = e.tags.isEmpty() ? "+ 添加标签" : e.tagText();
+            h.actTagLabel.setText(tagText);
+            h.actTag.setOnClickListener(v -> listener.onQuickTag(e));
+
             h.actStarIcon.setImageResource(
                     e.starred ? R.drawable.ic_star : R.drawable.ic_star_outline);
             int starColor = Design.color(act, e.starred ? R.color.c_star : R.color.c_text2);

@@ -171,9 +171,9 @@ public class CloudActivity extends AppActivity {
         LinearLayout box = Design.column(this);
         Design.pad(this, box, 14, 10, 6);
 
-        // Hero card
+        // Hero card (Noir Cat Obsidian Stage)
         LinearLayout hero = Design.column(this);
-        hero.setBackgroundResource(R.drawable.bg_hero);
+        hero.setBackgroundResource(R.drawable.bg_cat_stage);
         Design.pad(this, hero, 16, 16, 16);
 
         LinearLayout heroRow = Design.row(this);
@@ -185,19 +185,19 @@ public class CloudActivity extends AppActivity {
         heroRow.addView(ill, ip);
 
         LinearLayout heroInfo = Design.column(this);
-        heroStatusPill = Design.text(this, "检测状态…", 11, R.color.c_text2);
+        heroStatusPill = Design.text(this, "检测状态…", 11, R.color.c_cat_eye_left);
         heroStatusPill.setTypeface(null, Typeface.BOLD);
-        heroStatusPill.setBackgroundResource(R.drawable.bg_pill);
+        heroStatusPill.setBackgroundResource(R.drawable.bg_pill_on);
         Design.pad(this, heroStatusPill, 10, 4, 4);
         heroInfo.addView(heroStatusPill, new LinearLayout.LayoutParams(-2, -2));
 
         Design.gap(this, heroInfo, 8);
-        TextView heroTitle = Design.text(this, "加密备份与云端同步", 18, R.color.c_text);
+        TextView heroTitle = Design.text(this, "加密备份与云端同步", 18, R.color.c_cat_stage_text);
         heroTitle.setTypeface(null, Typeface.BOLD);
         heroInfo.addView(heroTitle);
 
         Design.gap(this, heroInfo, 4);
-        heroStatsTv = Design.text(this, "正在统计本地收藏与同步记录…", 12, R.color.c_text2);
+        heroStatsTv = Design.text(this, "正在统计本地收藏与同步记录…", 12, R.color.c_cat_stage_sub);
         heroInfo.addView(heroStatsTv);
 
         heroRow.addView(heroInfo, new LinearLayout.LayoutParams(0, -2, 1));
@@ -494,15 +494,15 @@ public class CloudActivity extends AppActivity {
                     if (pwdSet && davOk) {
                         heroStatusPill.setText("双重加密同步已就绪");
                         heroStatusPill.setBackgroundResource(R.drawable.bg_pill_on);
-                        heroStatusPill.setTextColor(Design.color(this, R.color.c_accent));
+                        heroStatusPill.setTextColor(Design.color(this, R.color.c_cat_eye_left));
                     } else if (pwdSet) {
                         heroStatusPill.setText("本地加密密码已就绪");
                         heroStatusPill.setBackgroundResource(R.drawable.bg_pill_on);
-                        heroStatusPill.setTextColor(Design.color(this, R.color.c_accent));
+                        heroStatusPill.setTextColor(Design.color(this, R.color.c_cat_eye_left));
                     } else {
                         heroStatusPill.setText("待设置备份密码");
-                        heroStatusPill.setBackgroundResource(R.drawable.bg_pill);
-                        heroStatusPill.setTextColor(Design.color(this, R.color.c_text2));
+                        heroStatusPill.setBackgroundResource(R.drawable.bg_pill_on);
+                        heroStatusPill.setTextColor(Design.color(this, R.color.c_cat_eye_right));
                     }
                     String cloudInfo =
                             files.isEmpty() ? "" : " · 云端 " + files.size() + " 份";

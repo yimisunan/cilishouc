@@ -2,43 +2,56 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:descendantFocusability="blocksDescendants"
     android:orientation="vertical"
     android:paddingLeft="14dp"
+    android:paddingTop="3.5dp"
     android:paddingRight="14dp"
-    android:paddingTop="3dp"
-    android:paddingBottom="3dp"
-    android:descendantFocusability="blocksDescendants">
+    android:paddingBottom="3.5dp">
 
     <LinearLayout
         android:id="@+id/entry_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="60dp"
+        android:background="@drawable/bg_card"
+        android:minHeight="62dp"
         android:orientation="vertical"
-        android:paddingLeft="12dp"
+        android:paddingLeft="10dp"
         android:paddingTop="10dp"
         android:paddingRight="6dp"
-        android:paddingBottom="10dp"
-        android:background="@drawable/bg_card">
+        android:paddingBottom="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="top">
+            android:gravity="top"
+            android:orientation="horizontal">
 
+            <!-- 左侧冷光协议/星标竖条 -->
+            <View
+                android:id="@+id/item_stripe"
+                android:layout_width="3.5dp"
+                android:layout_height="match_parent"
+                android:layout_marginTop="2dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginBottom="2dp"
+                android:background="@drawable/bg_accent_bar" />
+
+            <!-- 协议/猫爪多选徽章（轻点可直接切换多选） -->
             <FrameLayout
                 android:id="@+id/item_badge"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
                 android:layout_marginTop="1dp"
                 android:layout_marginRight="10dp"
-                android:background="@drawable/bg_badge_magnet">
+                android:background="@drawable/bg_badge_magnet"
+                android:clickable="true"
+                android:focusable="false">
 
                 <ImageView
                     android:id="@+id/item_icon"
-                    android:layout_width="17dp"
-                    android:layout_height="17dp"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
                     android:layout_gravity="center"
                     android:importantForAccessibility="no"
                     android:src="@drawable/ic_magnet"
@@ -49,8 +62,8 @@
                 android:id="@+id/item_content_col"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:layout_marginRight="2dp"
+                android:layout_weight="1"
                 android:orientation="vertical">
 
                 <LinearLayout
@@ -191,19 +204,21 @@
                     android:visibility="gone" />
             </LinearLayout>
 
+            <!-- 右侧快捷动作：轻点复制，长按直接打开 MoePal -->
             <ImageView
                 android:id="@+id/item_copy"
                 android:layout_width="38dp"
                 android:layout_height="38dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
-                android:contentDescription="复制链接"
+                android:contentDescription="复制链接（长按直接打开下载）"
                 android:focusable="false"
                 android:padding="9dp"
                 android:src="@drawable/ic_copy"
                 android:tint="@color/c_accent" />
         </LinearLayout>
 
+        <!-- 展开态：就地归档/改标签胶囊条 + 五键战术动作坞 -->
         <LinearLayout
             android:id="@+id/item_actions"
             android:layout_width="match_parent"
@@ -211,10 +226,104 @@
             android:orientation="vertical"
             android:visibility="gone">
 
+            <!-- 就地快捷改分类 & 改标签胶囊条 -->
+            <LinearLayout
+                android:id="@+id/item_dossier_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="9dp"
+                android:layout_marginRight="6dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/act_folder"
+                    android:layout_width="0dp"
+                    android:layout_height="34dp"
+                    android:layout_marginRight="6dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_pill"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginRight="6dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_folder"
+                        android:tint="@color/c_accent" />
+
+                    <TextView
+                        android:id="@+id/act_folder_label"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:singleLine="true"
+                        android:text="未分类"
+                        android:textColor="@color/c_text"
+                        android:textSize="11.5sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginLeft="4dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        android:tint="@color/c_text2" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/act_tag"
+                    android:layout_width="0dp"
+                    android:layout_height="34dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_pill"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_marginRight="6dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_tag"
+                        android:tint="@color/c_accent2" />
+
+                    <TextView
+                        android:id="@+id/act_tag_label"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:ellipsize="end"
+                        android:singleLine="true"
+                        android:text="+ 打标签"
+                        android:textColor="@color/c_text"
+                        android:textSize="11.5sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginLeft="4dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_chevron_right"
+                        android:tint="@color/c_text2" />
+                </LinearLayout>
+            </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginTop="9dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginRight="6dp"
                 android:layout_marginBottom="4dp"
                 android:background="@color/c_divider" />
@@ -230,8 +339,9 @@
                     android:id="@+id/act_open"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_flat"
+                    android:layout_marginRight="4dp"
+                    android:layout_weight="1.1"
+                    android:background="@drawable/bg_badge_magnet"
                     android:clickable="true"
                     android:focusable="false"
                     android:gravity="center"

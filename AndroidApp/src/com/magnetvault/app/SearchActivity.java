@@ -388,6 +388,52 @@ public class SearchActivity extends AppActivity {
                 });
     }
 
+    private void quickMoveFolder(Entry e) {
+        CategoryPicker.show(
+                this,
+                "归档「" + e.displayTitle() + "」",
+                e.categoryId,
+                "未分类",
+                "移出文件夹，设为未分类",
+                null,
+                true,
+                catId ->
+                        load(
+                                () -> {
+                                    Repo.moveCategory(
+                                            SearchActivity.this,
+                                            java.util.Collections.singletonList(e.id),
+                                            catId);
+                                    return true;
+                                },
+                                ok -> {
+                                    search();
+                                    Ui.toast(SearchActivity.this, "已更新分类");
+                                }));
+    }
+
+    private void quickEditTags(Entry e) {
+        TagPicker.show(
+                this,
+                "标签 · " + e.displayTitle(),
+                e.tags,
+                picked ->
+                        load(
+                                () -> {
+                                    Entry fresh = Repo.byId(SearchActivity.this, e.id);
+                                    if (fresh != null) {
+                                        fresh.tags.clear();
+                                        fresh.tags.addAll(picked);
+                                        Repo.save(SearchActivity.this, fresh);
+                                    }
+                                    return true;
+                                },
+                                ok -> {
+                                    search();
+                                    Ui.toast(SearchActivity.this, "已更新标签");
+                                }));
+    }
+
     private final EntryCard.Actions searchActions =
             new EntryCard.Actions() {
                 @Override
@@ -413,6 +459,16 @@ public class SearchActivity extends AppActivity {
                 @Override
                 public void onMore(Entry entry) {
                     moreActions(entry);
+                }
+
+                @Override
+                public void onQuickFolder(Entry entry) {
+                    quickMoveFolder(entry);
+                }
+
+                @Override
+                public void onQuickTag(Entry entry) {
+                    quickEditTags(entry);
                 }
             };
 

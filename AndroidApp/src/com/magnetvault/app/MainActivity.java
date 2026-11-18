@@ -25,11 +25,22 @@ public class MainActivity extends AppActivity {
     private static final int[] SORT_ICONS = {
         R.drawable.ic_history, R.drawable.ic_edit, R.drawable.ic_sort
     };
+    private static final String[] CAT_QUOTES = {
+        "「异瞳锁定猎物，暗夜替你守住每一条密钥。」",
+        "「左眼冰青审视哈希，右眼琥珀标记星标。」",
+        "「无声潜行，离线加密，片叶不沾身。」",
+        "「杂乱的链接交给猫爪，你只管尽情狩猎。」",
+        "「在屋脊俯瞰数据流，连呼吸都是冷色调。」",
+        "「别乱摸耳朵……除非你带了新的磁力链接。」"
+    };
 
-    private int tab, filter, sort, request, orgMode;
+    private int tab, filter, sort, request, orgMode, catQuoteIndex;
 
     /** Folder location belongs to Organize → Folders; switching tabs preserves it. */
     private String category;
+
+    /** Optional quick folder filter inside Home (tab == 0). */
+    private String homeFolderId;
 
     private String orgTagQuery = "";
     private boolean selecting, loading;
@@ -40,9 +51,12 @@ public class MainActivity extends AppActivity {
     private List<Entry> entries = new ArrayList<>();
     private Map<String, Integer> tags = new LinkedHashMap<>();
     private int total, trash, unfiled, starred;
-    private LinearLayout root, toolbar, header, nav, batch, fab, tagSearchBar;
+    private LinearLayout root, toolbar, header, nav, navWrap, batch, fab, tagSearchBar;
     private EditText tagSearchInput;
     private ImageButton tagSearchClear;
+    private CatMascotView avatarCat, stageCat;
+    private TextView stageQuoteTv, stageStatePill;
+    private int lastScrollFirstItem = -1, lastScrollTop = 0;
     private ListView list;
     private RowAdapter adapter;
     private String positionKey;
@@ -67,8 +81,10 @@ public class MainActivity extends AppActivity {
             filter = state.getInt("filter");
             sort = state.getInt("sort", sort);
             orgMode = state.getInt("orgMode");
+            catQuoteIndex = state.getInt("catQuoteIndex", 0);
             orgTagQuery = state.getString("orgTagQuery", "");
             category = state.getString("category");
+            homeFolderId = state.getString("homeFolderId");
             selecting = state.getBoolean("selecting");
             ArrayList<String> ids = state.getStringArrayList("selected");
             if (ids != null) selected.addAll(ids);
@@ -100,20 +116,48 @@ public class MainActivity extends AppActivity {
         list.setDivider(null);
         list.setDividerHeight(0);
         list.setClipToPadding(false);
-        Design.pad(this, list, 0, 4, 92);
+        Design.pad(this, list, 0, 4, 96);
         list.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
         header = Design.column(this);
         list.addHeaderView(header, null, false);
         adapter = new RowAdapter();
         list.setAdapter(adapter);
+        list.setOnScrollListener(
+                new AbsListView.OnScrollListener() {
+                    @Override
+                    public void onScrollStateChanged(AbsListView view, int scrollState) {}
+
+                    @Override
+                    public void onScroll(
+                            AbsListView view,
+                            int firstVisibleItem,
+                            int visibleItemCount,
+                            int totalItemCount) {
+                        View first = view.getChildAt(0);
+                        int top = first == null ? 0 : first.getTop();
+                        if (lastScrollFirstItem == firstVisibleItem) {
+                            int dy = lastScrollTop - top;
+                            if (Math.abs(dy) > 1) {
+                                if (avatarCat != null) avatarCat.trackScroll(0f, dy);
+                                if (stageCat != null) stageCat.trackScroll(0f, dy);
+                            }
+                        } else if (lastScrollFirstItem >= 0) {
+                            float dir = firstVisibleItem > lastScrollFirstItem ? 28f : -28f;
+                            if (avatarCat != null) avatarCat.trackScroll(0f, dir);
+                            if (stageCat != null) stageCat.trackScroll(0f, dir);
+                        }
+                        lastScrollFirstItem = firstVisibleItem;
+                        lastScrollTop = top;
+                    }
+                });
         body.addView(list, new LinearLayout.LayoutParams(-1, 0, 1));
 
         // Floating pill FAB inside centered container
         fab = buildFab();
-        FrameLayout.LayoutParams fabLp = new FrameLayout.LayoutParams(-2, Ui.dp(this, 52));
+        FrameLayout.LayoutParams fabLp = new FrameLayout.LayoutParams(-2, Ui.dp(this, 50));
         fabLp.gravity = Gravity.BOTTOM | Gravity.END;
         fabLp.rightMargin = Ui.dp(this, 18);
-        fabLp.bottomMargin = Ui.dp(this, 16);
+        fabLp.bottomMargin = Ui.dp(this, 14);
         centered.addView(fab, fabLp);
 
         // Floating batch selection bar
@@ -131,14 +175,20 @@ public class MainActivity extends AppActivity {
 
         root.addView(centered, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        View navDivider = new View(this);
-        navDivider.setBackgroundColor(Design.color(this, R.color.c_divider));
-        root.addView(navDivider, new LinearLayout.LayoutParams(-1, Ui.dp(this, 1)));
-
+        // Floating Noir Cat Dock at bottom
+        navWrap = Design.column(this);
+        Design.pad(this, navWrap, 16, 4, 10);
+        navWrap.setBackgroundColor(Design.color(this, R.color.c_bg));
         nav = Design.row(this);
-        Design.pad(this, nav, 8, 4, 4);
-        nav.setBackgroundColor(Design.color(this, R.color.c_nav_bg));
-        root.addView(nav);
+        Design.pad(this, nav, 8, 5, 5);
+        nav.setBackgroundResource(R.drawable.bg_dock);
+        nav.setElevation(Ui.dp(this, 6));
+        LinearLayout.LayoutParams navLp =
+                new LinearLayout.LayoutParams(
+                        width > 720 ? Ui.dp(this, 680) : -1, -2);
+        navLp.gravity = Gravity.CENTER_HORIZONTAL;
+        navWrap.addView(nav, navLp);
+        root.addView(navWrap);
         setContentView(root);
         navigation();
         buildToolbar();
@@ -251,20 +301,79 @@ public class MainActivity extends AppActivity {
         Design.pad(this, box, 18, 0, 0);
         box.setFocusable(true);
         box.setClickable(true);
-        box.setContentDescription("添加收藏");
+        box.setContentDescription("添加收藏（长按闪贴剪贴板）");
         Design.tactile(box);
         ImageView icon = new ImageView(this);
-        icon.setImageResource(R.drawable.ic_add);
+        icon.setImageResource(R.drawable.ic_paw);
         icon.setColorFilter(Design.color(this, R.color.c_on_accent));
         icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20));
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(Ui.dp(this, 19), Ui.dp(this, 19));
         ip.rightMargin = Ui.dp(this, 6);
         box.addView(icon, ip);
-        TextView label = Design.text(this, "添加", 15, R.color.c_on_accent);
+        TextView label = Design.text(this, "捕猎", 15, R.color.c_on_accent);
         label.setTypeface(null, Typeface.BOLD);
         box.addView(label);
         box.setOnClickListener(v -> addEntry());
+        box.setOnLongClickListener(
+                v -> {
+                    quickPasteFromClipboard();
+                    return true;
+                });
         return box;
+    }
+
+    private void quickPasteFromClipboard() {
+        String clip = Ui.clipboard(this);
+        Intent i = new Intent(this, ImportActivity.class);
+        String targetCat = tab == 1 && orgMode == 0 ? category : homeFolderId;
+        i.putExtra("category", targetCat);
+        if (clip != null && !clip.trim().isEmpty()) {
+            i.putExtra("text", clip);
+            Ui.toast(this, "⚡ 猫爪已捕获剪贴板内容");
+        } else {
+            Ui.toast(this, "剪贴板为空，可手动输入或粘贴链接");
+        }
+        startActivity(i);
+    }
+
+    private void cycleCatQuote(boolean showToast) {
+        catQuoteIndex = (catQuoteIndex + 1) % CAT_QUOTES.length;
+        String quote = CAT_QUOTES[catQuoteIndex];
+        if (stageQuoteTv != null) {
+            Design.animate(header);
+            stageQuoteTv.setText(quote);
+        }
+        if (stageStatePill != null && stageCat != null) {
+            int nextState = (stageCat.getCatState() + 1) % 3;
+            stageCat.setCatState(nextState);
+            stageStatePill.setText(catStateLabel(nextState));
+        }
+        if (showToast) {
+            Ui.toast(this, quote);
+        }
+    }
+
+    private static String catStateLabel(int state) {
+        if (state == CatMascotView.STATE_HUNT) return "狩猎竖瞳 · 锁定";
+        if (state == CatMascotView.STATE_PROWL) return "夜行巡视 · 机警";
+        return "屋脊冷眼 · 静默";
+    }
+
+    private void chooseHomeFolderFilter() {
+        CategoryPicker.show(
+                this,
+                "按分类快速筛选",
+                homeFolderId,
+                "全部分类（不限文件夹）",
+                "显示所有文件夹与未分类收藏",
+                null,
+                false,
+                picked -> {
+                    rememberPosition();
+                    homeFolderId = picked;
+                    if (picked != null && filter == 2) filter = 0;
+                    reload();
+                });
     }
 
     private void consumeFolderIntent(Intent intent) {
@@ -309,8 +418,10 @@ public class MainActivity extends AppActivity {
         state.putInt("filter", filter);
         state.putInt("sort", sort);
         state.putInt("orgMode", orgMode);
+        state.putInt("catQuoteIndex", catQuoteIndex);
         state.putString("orgTagQuery", orgTagQuery);
         state.putString("category", category);
+        state.putString("homeFolderId", homeFolderId);
         state.putBoolean("selecting", selecting);
         state.putStringArrayList("selected", new ArrayList<>(selected));
         state.putStringArrayList("expanded", new ArrayList<>(expanded));
@@ -325,7 +436,7 @@ public class MainActivity extends AppActivity {
         if (tab == 1) {
             return orgMode == 1 ? "1:tags" : "1:" + String.valueOf(category);
         }
-        return tab + ":" + filter;
+        return tab + ":" + filter + ":" + String.valueOf(homeFolderId);
     }
 
     private void rememberPosition() {
@@ -349,6 +460,7 @@ public class MainActivity extends AppActivity {
         final int token = ++request;
         final int wantedTab = tab, wantedFilter = filter, wantedSort = sort, wantedOrgMode = orgMode;
         final String wantedCat = category;
+        final String wantedHomeCat = homeFolderId;
         final String destination = key();
         loading = true;
         load(
@@ -364,7 +476,7 @@ public class MainActivity extends AppActivity {
                         List<Entry> base =
                                 Repo.listActive(
                                         this,
-                                        null,
+                                        wantedFilter == 2 ? null : wantedHomeCat,
                                         wantedFilter == 1,
                                         wantedFilter == 2,
                                         null,
@@ -398,6 +510,11 @@ public class MainActivity extends AppActivity {
                     trash = s.trash;
                     unfiled = s.unfiled;
                     starred = s.starred;
+                    if (homeFolderId != null && !hasCategory(homeFolderId)) {
+                        homeFolderId = null;
+                        reload();
+                        return;
+                    }
                     if (tab == 1 && orgMode == 0 && category != null && !hasCategory(category)) {
                         category = null;
                         reload();
@@ -535,6 +652,12 @@ public class MainActivity extends AppActivity {
             switchTab(0);
             return;
         }
+        if (homeFolderId != null) {
+            rememberPosition();
+            homeFolderId = null;
+            reload();
+            return;
+        }
         if (filter != 0) {
             rememberPosition();
             filter = 0;
@@ -547,13 +670,13 @@ public class MainActivity extends AppActivity {
     private void navigation() {
         nav.removeAllViews();
         String[] labels = {"收藏", "整理", "我的"};
-        int[] icons = {R.drawable.ic_magnet, R.drawable.ic_folder, R.drawable.ic_user};
+        int[] icons = {R.drawable.ic_cat, R.drawable.ic_folder, R.drawable.ic_cat_eye};
         for (int i = 0; i < labels.length; i++) {
             final int value = i;
             boolean active = tab == i;
             LinearLayout item = Design.column(this);
             item.setGravity(Gravity.CENTER);
-            item.setMinimumHeight(Ui.dp(this, 56));
+            item.setMinimumHeight(Ui.dp(this, 52));
             Design.pad(this, item, 6, 4, 4);
             item.setBackgroundResource(R.drawable.bg_flat);
             item.setSelected(active);
@@ -564,21 +687,36 @@ public class MainActivity extends AppActivity {
             if (active) pill.setBackgroundResource(R.drawable.bg_nav_pill);
             ImageView icon = new ImageView(this);
             icon.setImageResource(icons[i]);
-            icon.setColorFilter(Design.color(this, active ? R.color.c_accent : R.color.c_text2));
+            icon.setColorFilter(
+                    Design.color(
+                            this,
+                            active
+                                    ? (i == 2 ? R.color.c_accent2 : R.color.c_accent)
+                                    : R.color.c_text2));
             icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             int sz = Ui.dp(this, 20);
             pill.addView(icon, new FrameLayout.LayoutParams(sz, sz, Gravity.CENTER));
-            item.addView(pill, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 30)));
+            item.addView(pill, new LinearLayout.LayoutParams(Ui.dp(this, 56), Ui.dp(this, 28)));
 
-            Design.gap(this, item, 3);
+            Design.gap(this, item, 2);
             TextView text =
-                    Design.text(this, labels[i], 12, active ? R.color.c_accent : R.color.c_text2);
+                    Design.text(
+                            this,
+                            labels[i],
+                            11,
+                            active
+                                    ? (i == 2 ? R.color.c_accent2 : R.color.c_accent)
+                                    : R.color.c_text2);
             text.setTypeface(null, active ? Typeface.BOLD : Typeface.NORMAL);
             text.setGravity(Gravity.CENTER);
             text.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             text.setSingleLine(true);
             item.addView(text, new LinearLayout.LayoutParams(-1, -2));
-            item.setOnClickListener(v -> switchTab(value));
+            item.setOnClickListener(
+                    v -> {
+                        Design.popBounce(icon);
+                        switchTab(value);
+                    });
             nav.addView(item, new LinearLayout.LayoutParams(0, -2, 1));
         }
     }
@@ -597,7 +735,7 @@ public class MainActivity extends AppActivity {
         toolbar.removeAllViews();
         LinearLayout bar = Design.row(this);
         Design.pad(this, bar, 10, 6, 4);
-        bar.setMinimumHeight(Ui.dp(this, 54));
+        bar.setMinimumHeight(Ui.dp(this, 56));
         if (selecting) {
             ImageButton close =
                     tool(
@@ -610,7 +748,23 @@ public class MainActivity extends AppActivity {
                             });
             close.setColorFilter(Design.color(this, R.color.c_text));
             bar.addView(close);
-            TextView count = Design.text(this, "已选 " + selected.size() + " 条", 18, R.color.c_text);
+            if (avatarCat == null) {
+                avatarCat = new CatMascotView(this, CatMascotView.MODE_AVATAR);
+            } else if (avatarCat.getParent() instanceof ViewGroup) {
+                ((ViewGroup) avatarCat.getParent()).removeView(avatarCat);
+            }
+            avatarCat.setCatState(CatMascotView.STATE_HUNT);
+            LinearLayout.LayoutParams cp =
+                    new LinearLayout.LayoutParams(Ui.dp(this, 36), Ui.dp(this, 36));
+            cp.rightMargin = Ui.dp(this, 6);
+            bar.addView(avatarCat, cp);
+
+            TextView count =
+                    Design.text(
+                            this,
+                            "已捕获 " + selected.size() + " 条",
+                            18,
+                            R.color.c_text);
             count.setTypeface(null, Typeface.BOLD);
             bar.addView(count, new LinearLayout.LayoutParams(0, -2, 1));
             bar.addView(
@@ -627,47 +781,58 @@ public class MainActivity extends AppActivity {
                 ImageButton back = tool(R.drawable.ic_back, "返回上级", this::goUpOneLevel);
                 back.setColorFilter(Design.color(this, R.color.c_text));
                 bar.addView(back);
-            } else if (tab == 0 || tab == 1) {
-                View badge =
-                        Design.iconBadge(
-                                this,
-                                tab == 0 ? R.drawable.ic_cat : R.drawable.ic_folder,
-                                Design.color(this, R.color.c_accent),
-                                Design.color(this, R.color.c_accent_soft),
-                                36,
-                                19);
-                LinearLayout.LayoutParams bp = (LinearLayout.LayoutParams) badge.getLayoutParams();
-                bp.leftMargin = Ui.dp(this, 6);
-                bp.rightMargin = Ui.dp(this, 6);
-                bar.addView(badge, bp);
             } else {
-                Design.hgap(this, bar, 6);
+                if (avatarCat == null) {
+                    avatarCat = new CatMascotView(this, CatMascotView.MODE_AVATAR);
+                    avatarCat.setOnPokeListener(() -> cycleCatQuote(true));
+                    avatarCat.setOnLongClickListener(
+                            v -> {
+                                quickPasteFromClipboard();
+                                return true;
+                            });
+                } else if (avatarCat.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) avatarCat.getParent()).removeView(avatarCat);
+                }
+                int catState =
+                        (tab == 0 && (filter != 0 || homeFolderId != null))
+                                ? CatMascotView.STATE_PROWL
+                                : CatMascotView.STATE_ALOOF;
+                avatarCat.setCatState(catState);
+                LinearLayout.LayoutParams bp =
+                        new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40));
+                bp.leftMargin = Ui.dp(this, 4);
+                bp.rightMargin = Ui.dp(this, 6);
+                bar.addView(avatarCat, bp);
             }
+
             LinearLayout copy = Design.column(this);
-            Design.pad(this, copy, 6, 2, 2);
+            Design.pad(this, copy, 4, 2, 2);
             String titleStr =
                     tab == 0
-                            ? "我的收藏"
-                            : tab == 1 ? (orgMode == 1 ? "标签整理" : categoryName()) : "我的";
-            TextView name = Design.text(this, titleStr, 20, R.color.c_text);
+                            ? "黑猫金库"
+                            : tab == 1 ? (orgMode == 1 ? "标签矩阵" : categoryName()) : "暗夜中枢";
+            TextView name = Design.text(this, titleStr, 19, R.color.c_text);
             name.setTypeface(null, Typeface.BOLD);
             name.setSingleLine(true);
             name.setEllipsize(TextUtils.TruncateAt.END);
             copy.addView(name);
             String info;
             if (tab == 0) {
-                if (filter == 1) info = starred + " 条星标收藏";
-                else if (filter == 2) info = unfiled + " 条未分类收藏";
-                else if (filter == 3) info = "仅显示 BT 磁力链接 · 共 " + entries.size() + " 条";
-                else if (filter == 4) info = "仅显示 ED2K 文件链接 · 共 " + entries.size() + " 条";
-                else info = total + " 条收藏 · " + starred + " 星标";
+                String folderPrefix =
+                        homeFolderId != null ? "📁 " + pathName(homeFolderId) + " · " : "";
+                if (filter == 1) info = folderPrefix + starred + " 条星标猎物";
+                else if (filter == 2) info = unfiled + " 条未归档猎物";
+                else if (filter == 3) info = folderPrefix + "BT 磁力 · " + entries.size() + " 条";
+                else if (filter == 4) info = folderPrefix + "ED2K 电驴 · " + entries.size() + " 条";
+                else if (homeFolderId != null) info = folderPrefix + entries.size() + " 条收藏";
+                else info = total + " 条收藏 · " + starred + " 星标 · 轻点猫头互动";
             } else if (tab == 1) {
-                if (orgMode == 1) info = tags.size() + " 个标签 · 轻点查看相关收藏";
-                else info = category == null ? rootFolderCount() + " 个根分类" : pathName(category);
+                if (orgMode == 1) info = tags.size() + " 个标签 · 轻点标签直达检索";
+                else info = category == null ? rootFolderCount() + " 个根分类 · 支持无限层级" : pathName(category);
             } else {
-                info = "本地加密收藏夹 · v" + Design.versionName(this);
+                info = "异瞳守卫 · 本地离线加密 · v" + Design.versionName(this);
             }
-            TextView sub = Design.text(this, info, 12, R.color.c_text2);
+            TextView sub = Design.text(this, info, 11, R.color.c_text2);
             sub.setSingleLine(true);
             sub.setEllipsize(TextUtils.TruncateAt.MIDDLE);
             copy.addView(sub);
@@ -693,17 +858,23 @@ public class MainActivity extends AppActivity {
                 bar.addView(tool(R.drawable.ic_more, "整理操作", this::pageActions));
             } else if (tab == 0) {
                 bar.addView(tool(R.drawable.ic_more, "收藏操作", this::pageActions));
+            } else {
+                bar.addView(
+                        tool(
+                                R.drawable.ic_info,
+                                "使用指南",
+                                () -> Ui.guideSheet(this)));
             }
         }
         toolbar.addView(bar);
 
         if (tab == 0 && !selecting) {
-            // Prominent integrated search bar card
-            LinearLayout searchWrap = Design.column(this);
+            // Prominent integrated search bar + 1-tap Flash Paste pill
+            LinearLayout searchWrap = Design.row(this);
             Design.pad(this, searchWrap, 14, 0, 8);
             LinearLayout searchBar = Design.row(this);
             searchBar.setBackgroundResource(R.drawable.bg_search);
-            searchBar.setMinimumHeight(Ui.dp(this, 44));
+            searchBar.setMinimumHeight(Ui.dp(this, 42));
             Design.pad(this, searchBar, 12, 4, 4);
             searchBar.setFocusable(true);
             searchBar.setClickable(true);
@@ -715,11 +886,11 @@ public class MainActivity extends AppActivity {
             si.setColorFilter(Design.color(this, R.color.c_text2));
             si.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             LinearLayout.LayoutParams sip =
-                    new LinearLayout.LayoutParams(Ui.dp(this, 17), Ui.dp(this, 17));
+                    new LinearLayout.LayoutParams(Ui.dp(this, 16), Ui.dp(this, 16));
             sip.rightMargin = Ui.dp(this, 8);
             searchBar.addView(si, sip);
 
-            TextView ph = Design.text(this, "搜索标题、番号、Hash、标签或备注…", 13, R.color.c_text2);
+            TextView ph = Design.text(this, "搜索标题、番号、Hash、标签…", 13, R.color.c_text2);
             ph.setSingleLine(true);
             ph.setEllipsize(TextUtils.TruncateAt.END);
             searchBar.addView(ph, new LinearLayout.LayoutParams(0, -2, 1));
@@ -727,38 +898,83 @@ public class MainActivity extends AppActivity {
             LinearLayout tagBtn =
                     Design.pill(
                             this,
-                            "按标签",
+                            "标签",
                             R.drawable.ic_tag,
                             false,
                             this::openSearchWithTags);
-            Design.pad(this, tagBtn, 10, 4, 4);
-            tagBtn.setMinimumHeight(Ui.dp(this, 32));
+            Design.pad(this, tagBtn, 9, 4, 4);
+            tagBtn.setMinimumHeight(Ui.dp(this, 30));
             tagBtn.setBackgroundResource(R.drawable.bg_card);
             searchBar.addView(tagBtn);
             searchBar.setOnClickListener(v -> openSearch());
-            searchWrap.addView(searchBar);
+            searchWrap.addView(searchBar, new LinearLayout.LayoutParams(0, -2, 1));
+
+            Design.hgap(this, searchWrap, 8);
+            LinearLayout flashPasteBtn =
+                    Design.pill(
+                            this,
+                            "闪贴",
+                            R.drawable.ic_paste,
+                            true,
+                            this::quickPasteFromClipboard);
+            flashPasteBtn.setMinimumHeight(Ui.dp(this, 42));
+            Design.pad(this, flashPasteBtn, 12, 6, 6);
+            flashPasteBtn.setContentDescription("一键闪贴剪贴板链接");
+            searchWrap.addView(flashPasteBtn);
             toolbar.addView(searchWrap);
 
-            // Filter pills + layout toggle + sort
+            // Filter pills + quick folder chip + layout toggle + sort
             LinearLayout filterBar = Design.row(this);
             Design.pad(this, filterBar, 14, 0, 8);
             HorizontalScrollView hsv = new HorizontalScrollView(this);
             hsv.setHorizontalScrollBarEnabled(false);
             LinearLayout pills = Design.row(this);
+
+            LinearLayout allPill =
+                    Design.pill(
+                            this,
+                            "全部 " + total,
+                            0,
+                            filter == 0 && homeFolderId == null,
+                            () -> {
+                                rememberPosition();
+                                filter = 0;
+                                homeFolderId = null;
+                                reload();
+                            });
+            LinearLayout.LayoutParams allLp = new LinearLayout.LayoutParams(-2, -2);
+            allLp.rightMargin = Ui.dp(this, 6);
+            pills.addView(allPill, allLp);
+
+            Category activeHomeCat = findCategory(homeFolderId);
+            String folderChipLabel =
+                    activeHomeCat != null ? activeHomeCat.name : "分类";
+            LinearLayout folderPill =
+                    Design.pill(
+                            this,
+                            folderChipLabel,
+                            R.drawable.ic_folder,
+                            homeFolderId != null,
+                            this::chooseHomeFolderFilter);
+            LinearLayout.LayoutParams fpLp = new LinearLayout.LayoutParams(-2, -2);
+            fpLp.rightMargin = Ui.dp(this, 6);
+            pills.addView(folderPill, fpLp);
+
             String[] names = {
-                "全部 " + total, "星标 " + starred, "未分类 " + unfiled, "BT", "ED2K"
+                "星标 " + starred, "未分类 " + unfiled, "BT", "ED2K"
             };
             for (int i = 0; i < names.length; i++) {
-                final int f = i;
+                final int f = i + 1;
                 LinearLayout pill =
                         Design.pill(
                                 this,
                                 names[i],
                                 0,
-                                filter == i,
+                                filter == f,
                                 () -> {
                                     rememberPosition();
                                     filter = f;
+                                    if (f == 2) homeFolderId = null;
                                     reload();
                                 });
                 LinearLayout.LayoutParams pp = new LinearLayout.LayoutParams(-2, -2);
@@ -1072,7 +1288,48 @@ public class MainActivity extends AppActivity {
                         () -> CategoryEditor.cleanUnusedTags(this, this::reload));
         actRow.addView(cleanTag);
         header.addView(actRow);
-        Design.gap(this, header, 6);
+        Design.gap(this, header, 8);
+
+        if (orgTagQuery.trim().isEmpty() && !tags.isEmpty()) {
+            List<Map.Entry<String, Integer>> sorted = Repo.sortByUsage(tags);
+            int limit = Math.min(10, sorted.size());
+            if (limit > 0) {
+                LinearLayout cloudCard = Design.column(this);
+                cloudCard.setBackgroundResource(R.drawable.bg_card_soft);
+                Design.pad(this, cloudCard, 12, 10, 10);
+                TextView cloudTitle =
+                        Design.text(
+                                this,
+                                "高频狩猎标签 · 轻点直达检索（长按管理）",
+                                11,
+                                R.color.c_text2);
+                cloudTitle.setTypeface(null, Typeface.BOLD);
+                cloudCard.addView(cloudTitle);
+                Design.gap(this, cloudCard, 8);
+
+                ChipFlow flow = new ChipFlow(this);
+                for (int i = 0; i < limit; i++) {
+                    Map.Entry<String, Integer> item = sorted.get(i);
+                    final String tagName = item.getKey();
+                    int cnt = item.getValue();
+                    TextView chip =
+                            Design.tagChip(
+                                    this,
+                                    "#" + tagName + (cnt > 0 ? " · " + cnt : ""),
+                                    i < 3 && cnt > 0,
+                                    () -> openTagSearch(tagName));
+                    chip.setOnLongClickListener(
+                            v -> {
+                                tagActions(tagName);
+                                return true;
+                            });
+                    flow.addView(chip);
+                }
+                cloudCard.addView(flow, new LinearLayout.LayoutParams(-1, -2));
+                header.addView(cloudCard);
+                Design.gap(this, header, 6);
+            }
+        }
     }
 
     private void emptyState() {
@@ -1114,6 +1371,20 @@ public class MainActivity extends AppActivity {
                             "可以粘贴链接直接保存到当前文件夹",
                             "添加收藏",
                             this::addEntry));
+        } else if (homeFolderId != null) {
+            header.addView(
+                    Design.emptyState(
+                            this,
+                            R.drawable.ill_empty_folder,
+                            "该分类下暂无匹配的收藏",
+                            "可以切换其他分类，或清除分类筛选查看全部猎物",
+                            "清除分类筛选",
+                            () -> {
+                                rememberPosition();
+                                homeFolderId = null;
+                                filter = 0;
+                                reload();
+                            }));
         } else if (filter == 1) {
             header.addView(
                     Design.emptyState(
@@ -1158,9 +1429,9 @@ public class MainActivity extends AppActivity {
                     Design.emptyState(
                             this,
                             R.drawable.ill_empty_vault,
-                            "收藏夹还是空的",
-                            "支持 magnet 与 ED2K 链接，粘贴多条会自动识别去重",
-                            "添加第一条收藏",
+                            "黑猫金库还是空的",
+                            "支持 magnet 与 ED2K 链接，点击右上「闪贴」或右下「捕猎」自动识别去重",
+                            "捕猎第一条收藏",
                             this::addEntry));
         }
     }
@@ -1171,39 +1442,74 @@ public class MainActivity extends AppActivity {
     }
 
     private void mineHeader() {
-        Design.gap(this, header, 8);
-        // Hero vault card with SVG emblem + interactive stats
+        Design.gap(this, header, 6);
+        // 1. Noir Cat Rooftop Stage Card (动静结合 · 暗夜异瞳剧场)
         LinearLayout hero = Design.column(this);
-        hero.setBackgroundResource(R.drawable.bg_hero);
+        hero.setBackgroundResource(R.drawable.bg_cat_stage);
         Design.pad(this, hero, 16, 16, 14);
 
         LinearLayout top = Design.row(this);
-        ImageView emblem = new ImageView(this);
-        emblem.setImageResource(R.drawable.ill_hero_vault);
-        emblem.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
-        LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(Ui.dp(this, 60), Ui.dp(this, 60));
+        if (stageCat == null) {
+            stageCat = new CatMascotView(this, CatMascotView.MODE_STAGE);
+            stageCat.setOnPokeListener(() -> cycleCatQuote(false));
+        } else if (stageCat.getParent() instanceof ViewGroup) {
+            ((ViewGroup) stageCat.getParent()).removeView(stageCat);
+        }
+        LinearLayout.LayoutParams ep =
+                new LinearLayout.LayoutParams(Ui.dp(this, 96), Ui.dp(this, 88));
         ep.rightMargin = Ui.dp(this, 14);
-        top.addView(emblem, ep);
+        top.addView(stageCat, ep);
 
         LinearLayout info = Design.column(this);
-        LinearLayout titleRow = Design.row(this);
-        TextView appTitle = Design.text(this, "磁力收藏夹", 19, R.color.c_text);
-        appTitle.setTypeface(null, Typeface.BOLD);
-        titleRow.addView(appTitle);
-        Design.hgap(this, titleRow, 8);
-        TextView ver = Design.tagChip(this, "v" + Design.versionName(this), true, null);
-        titleRow.addView(ver);
-        info.addView(titleRow);
-        Design.gap(this, info, 4);
-        info.addView(
+        LinearLayout badgeRow = Design.row(this);
+        stageStatePill =
                 Design.text(
                         this,
-                        ThemePrefs.lastBackupAt(this) == 0
-                                ? "本地加密存储 · 尚未备份"
-                                : "最近备份 " + Ui.time(ThemePrefs.lastBackupAt(this)),
+                        catStateLabel(stageCat.getCatState()),
+                        10,
+                        R.color.c_cat_eye_left);
+        stageStatePill.setTypeface(null, Typeface.BOLD);
+        stageStatePill.setBackgroundResource(R.drawable.bg_pill_on);
+        Design.pad(this, stageStatePill, 8, 3, 3);
+        badgeRow.addView(stageStatePill);
+        Design.hgap(this, badgeRow, 6);
+        TextView ver =
+                Design.text(
+                        this,
+                        "v" + Design.versionName(this),
+                        10,
+                        R.color.c_cat_stage_sub);
+        ver.setTypeface(null, Typeface.BOLD);
+        badgeRow.addView(ver);
+        info.addView(badgeRow);
+
+        Design.gap(this, info, 6);
+        TextView appTitle = Design.text(this, "暗夜异瞳 · 磁力金库", 18, R.color.c_cat_stage_text);
+        appTitle.setTypeface(null, Typeface.BOLD);
+        info.addView(appTitle);
+
+        Design.gap(this, info, 4);
+        stageQuoteTv =
+                Design.text(
+                        this,
+                        CAT_QUOTES[catQuoteIndex],
                         12,
-                        R.color.c_text2));
+                        R.color.c_cat_eye_right);
+        stageQuoteTv.setTypeface(null, Typeface.BOLD);
+        info.addView(stageQuoteTv);
+
+        Design.gap(this, info, 4);
+        long lastBk = ThemePrefs.lastBackupAt(this);
+        String syncHint =
+                lastBk == 0
+                        ? "轻点黑猫切换暗语 · 本地离线加密"
+                        : "轻点黑猫互动 · 最近备份 " + Ui.time(lastBk);
+        info.addView(Design.text(this, syncHint, 11, R.color.c_cat_stage_sub));
         top.addView(info, new LinearLayout.LayoutParams(0, -2, 1));
+        top.setOnClickListener(
+                v -> {
+                    if (stageCat != null) stageCat.poke();
+                });
         hero.addView(top);
 
         Design.gap(this, hero, 14);
@@ -1214,6 +1520,7 @@ public class MainActivity extends AppActivity {
                 "收藏",
                 () -> {
                     filter = 0;
+                    homeFolderId = null;
                     switchTab(0);
                 });
         Design.hgap(this, stats, 6);
@@ -1247,49 +1554,178 @@ public class MainActivity extends AppActivity {
         hero.addView(stats);
         header.addView(hero);
 
-        Design.gap(this, header, 14);
-        long lastBk = ThemePrefs.lastBackupAt(this);
+        // 2. Inline Quick-Control Console (1-tap theme & density switch right in Mine tab)
+        Design.gap(this, header, 12);
+        LinearLayout quickConsole = Design.column(this);
+        quickConsole.setBackgroundResource(R.drawable.bg_card);
+        Design.pad(this, quickConsole, 14, 12, 12);
+
+        LinearLayout themeLine = Design.row(this);
+        TextView themeLbl = Design.text(this, "视觉主题", 13, R.color.c_text);
+        themeLbl.setTypeface(null, Typeface.BOLD);
+        themeLine.addView(themeLbl, new LinearLayout.LayoutParams(0, -2, 1));
+        String[] tNames = {"跟随系统", "霜银", "黑曜"};
+        int curMode = ThemePrefs.getMode(this);
+        for (int i = 0; i < tNames.length; i++) {
+            final int m = i;
+            LinearLayout p =
+                    Design.pill(
+                            this,
+                            tNames[i],
+                            0,
+                            curMode == m,
+                            () -> {
+                                if (ThemePrefs.getMode(this) != m) {
+                                    ThemePrefs.setMode(this, m);
+                                    recreate();
+                                }
+                            });
+            p.setMinimumHeight(Ui.dp(this, 30));
+            Design.pad(this, p, 10, 4, 4);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+            if (i > 0) lp.leftMargin = Ui.dp(this, 6);
+            themeLine.addView(p, lp);
+        }
+        quickConsole.addView(themeLine);
+
+        Design.gap(this, quickConsole, 10);
+        LinearLayout densityLine = Design.row(this);
+        TextView densityLbl = Design.text(this, "卡片排版", 13, R.color.c_text);
+        densityLbl.setTypeface(null, Typeface.BOLD);
+        densityLine.addView(densityLbl, new LinearLayout.LayoutParams(0, -2, 1));
+        boolean isCompact = ThemePrefs.isCompactList(this);
+        LinearLayout pCompact =
+                Design.pill(
+                        this,
+                        "紧凑 2 行",
+                        R.drawable.ic_view_compact,
+                        isCompact,
+                        () -> {
+                            if (!ThemePrefs.isCompactList(this)) toggleCompactMode();
+                        });
+        pCompact.setMinimumHeight(Ui.dp(this, 30));
+        Design.pad(this, pCompact, 10, 4, 4);
+        densityLine.addView(pCompact);
+        Design.hgap(this, densityLine, 6);
+        LinearLayout pFull =
+                Design.pill(
+                        this,
+                        "完整标题",
+                        R.drawable.ic_view_full,
+                        !isCompact,
+                        () -> {
+                            if (ThemePrefs.isCompactList(this)) toggleCompactMode();
+                        });
+        pFull.setMinimumHeight(Ui.dp(this, 30));
+        Design.pad(this, pFull, 10, 4, 4);
+        densityLine.addView(pFull);
+        quickConsole.addView(densityLine);
+        header.addView(quickConsole);
+
+        // 3. 2x2 Bento Matrix for Core Modules
+        Design.gap(this, header, 10);
         String backupSub =
                 ThemePrefs.isDavConfigured(this)
-                        ? (lastBk == 0
-                                ? "已连接坚果云 · 支持自动备份与导出"
-                                : "已连接坚果云 · 最近 " + Ui.time(lastBk))
-                        : "本地加密 .mjbf 文件导出、恢复与坚果云同步";
-        header.addView(
-                Design.action(
-                        this,
-                        "备份与云端中心",
-                        backupSub,
+                        ? (lastBk == 0 ? "坚果云已就绪" : "同步于 " + Ui.time(lastBk))
+                        : "本地 .mjbf 与坚果云";
+        LinearLayout bentoRow1 = Design.row(this);
+        bentoRow1.addView(
+                buildBentoCard(
                         R.drawable.ic_cloud,
-                        () -> startActivity(new Intent(this, CloudActivity.class))));
-        Design.gap(this, header, 8);
-        header.addView(
-                Design.action(
-                        this,
-                        "回收站",
-                        trash == 0 ? "空空如也，删除的收藏可随时恢复" : trash + " 条收藏等待处理",
+                        R.color.c_accent,
+                        R.color.c_accent_soft,
+                        "备份与云端",
+                        backupSub,
+                        () -> startActivity(new Intent(this, CloudActivity.class))),
+                new LinearLayout.LayoutParams(0, -2, 1));
+        Design.hgap(this, bentoRow1, 8);
+        bentoRow1.addView(
+                buildBentoCard(
                         R.drawable.ic_trash,
-                        () -> startActivity(new Intent(this, TrashActivity.class))));
+                        R.color.c_accent2,
+                        R.color.c_accent2_soft,
+                        "回收站",
+                        trash == 0 ? "空空如也 · 安全待命" : trash + " 条猎物可恢复",
+                        () -> startActivity(new Intent(this, TrashActivity.class))),
+                new LinearLayout.LayoutParams(0, -2, 1));
+        header.addView(bentoRow1);
+
         Design.gap(this, header, 8);
-        header.addView(
-                Design.action(
-                        this,
-                        "外观与偏好",
-                        "主题："
-                                + ThemePrefs.themeLabel(this)
-                                + " · 列表："
-                                + (ThemePrefs.isCompactList(this) ? "紧凑标题" : "完整标题"),
+        int keepDays = ThemePrefs.trashKeepDays(this);
+        LinearLayout bentoRow2 = Design.row(this);
+        bentoRow2.addView(
+                buildBentoCard(
                         R.drawable.ic_theme,
-                        () -> settings("appearance")));
-        Design.gap(this, header, 8);
-        header.addView(
-                Design.action(
-                        this,
-                        "使用指南",
-                        "快速上手批量识别、分类整理与加密备份",
-                        R.drawable.ic_info,
-                        () -> Ui.guideSheet(this)));
+                        R.color.c_accent,
+                        R.color.c_accent_soft,
+                        "外观与策略",
+                        ThemePrefs.themeLabel(this)
+                                + " · "
+                                + (keepDays > 0 ? keepDays + "天清理" : "永久保留"),
+                        () -> settings("appearance")),
+                new LinearLayout.LayoutParams(0, -2, 1));
+        Design.hgap(this, bentoRow2, 8);
+        bentoRow2.addView(
+                buildBentoCard(
+                        R.drawable.ic_paw,
+                        R.color.c_star,
+                        R.color.c_accent2_soft,
+                        "黑猫狩猎指南",
+                        "手势秘籍与加密说明",
+                        () -> Ui.guideSheet(this)),
+                new LinearLayout.LayoutParams(0, -2, 1));
+        header.addView(bentoRow2);
         Design.gap(this, header, 20);
+    }
+
+    private LinearLayout buildBentoCard(
+            int iconRes,
+            int tintRes,
+            int bgRes,
+            String titleStr,
+            String subStr,
+            Runnable onClick) {
+        LinearLayout card = Design.column(this);
+        card.setBackgroundResource(R.drawable.bg_card);
+        Design.pad(this, card, 14, 14, 14);
+        card.setFocusable(true);
+        card.setClickable(true);
+        Design.tactile(card);
+
+        LinearLayout topRow = Design.row(this);
+        FrameLayout badge =
+                Design.iconBadge(
+                        this,
+                        iconRes,
+                        Design.color(this, tintRes),
+                        Design.color(this, bgRes),
+                        38,
+                        19);
+        topRow.addView(badge);
+        View spacer = new View(this);
+        topRow.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1));
+        ImageView chev = new ImageView(this);
+        chev.setImageResource(R.drawable.ic_chevron_right);
+        chev.setColorFilter(Design.color(this, R.color.c_text2));
+        chev.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        topRow.addView(chev, new LinearLayout.LayoutParams(Ui.dp(this, 16), Ui.dp(this, 16)));
+        card.addView(topRow);
+
+        Design.gap(this, card, 12);
+        TextView title = Design.text(this, titleStr, 15, R.color.c_text);
+        title.setTypeface(null, Typeface.BOLD);
+        title.setSingleLine(true);
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        card.addView(title);
+
+        Design.gap(this, card, 3);
+        TextView sub = Design.text(this, subStr, 11, R.color.c_text2);
+        sub.setSingleLine(true);
+        sub.setEllipsize(TextUtils.TruncateAt.END);
+        card.addView(sub);
+
+        card.setOnClickListener(v -> onClick.run());
+        return card;
     }
 
     private void addStatCell(
@@ -1326,16 +1762,18 @@ public class MainActivity extends AppActivity {
 
     private void openImport() {
         Intent i = new Intent(this, ImportActivity.class);
-        i.putExtra("category", tab == 1 && orgMode == 0 ? category : null);
+        i.putExtra("category", tab == 1 && orgMode == 0 ? category : homeFolderId);
         startActivity(i);
     }
 
     private void openSearch() {
         Intent i = new Intent(this, SearchActivity.class);
-        i.putExtra(SearchActivity.EXTRA_CATEGORY_ID, tab == 1 && orgMode == 0 ? category : null);
+        String searchCat = tab == 1 && orgMode == 0 ? category : homeFolderId;
+        i.putExtra(SearchActivity.EXTRA_CATEGORY_ID, searchCat);
+        Category found = findCategory(searchCat);
         i.putExtra(
                 SearchActivity.EXTRA_CATEGORY_NAME,
-                tab == 1 && orgMode == 0 && category != null ? categoryName() : "全部收藏");
+                found != null ? found.name : "全部收藏");
         startActivity(i);
     }
 
@@ -1376,6 +1814,7 @@ public class MainActivity extends AppActivity {
         batch.removeAllViews();
         batch.setVisibility(selecting ? View.VISIBLE : View.GONE);
         nav.setVisibility(selecting ? View.GONE : View.VISIBLE);
+        if (navWrap != null) navWrap.setVisibility(selecting ? View.GONE : View.VISIBLE);
         if (fab != null) {
             boolean showFab = !selecting && (tab == 0 || tab == 1);
             fab.setVisibility(showFab ? View.VISIBLE : View.GONE);
@@ -1434,7 +1873,7 @@ public class MainActivity extends AppActivity {
             CategoryPicker.show(
                     this,
                     "将 " + ids.size() + " 条收藏移动到",
-                    tab == 1 ? category : null,
+                    tab == 1 ? category : homeFolderId,
                     "未分类",
                     "移出文件夹，设为未分类",
                     null,
@@ -1525,6 +1964,52 @@ public class MainActivity extends AppActivity {
         }
     }
 
+    private void quickMoveEntryFolder(Entry e) {
+        CategoryPicker.show(
+                this,
+                "归档「" + e.displayTitle() + "」",
+                e.categoryId,
+                "未分类",
+                "移出文件夹，设为未分类",
+                null,
+                true,
+                catId ->
+                        load(
+                                () -> {
+                                    Repo.moveCategory(
+                                            MainActivity.this,
+                                            Collections.singletonList(e.id),
+                                            catId);
+                                    return true;
+                                },
+                                ok -> {
+                                    reload();
+                                    Ui.toast(MainActivity.this, "已更新分类");
+                                }));
+    }
+
+    private void quickEditEntryTags(Entry e) {
+        TagPicker.show(
+                this,
+                "标签 · " + e.displayTitle(),
+                e.tags,
+                picked ->
+                        load(
+                                () -> {
+                                    Entry fresh = Repo.byId(MainActivity.this, e.id);
+                                    if (fresh != null) {
+                                        fresh.tags.clear();
+                                        fresh.tags.addAll(picked);
+                                        Repo.save(MainActivity.this, fresh);
+                                    }
+                                    return true;
+                                },
+                                ok -> {
+                                    reload();
+                                    Ui.toast(MainActivity.this, "已更新标签");
+                                }));
+    }
+
     private final EntryCard.Actions entryActionsListener =
             new EntryCard.Actions() {
                 @Override
@@ -1550,6 +2035,25 @@ public class MainActivity extends AppActivity {
                 @Override
                 public void onMore(Entry entry) {
                     entryActions(entry);
+                }
+
+                @Override
+                public void onBadgeSelect(Entry entry) {
+                    if (!selecting) {
+                        selecting = true;
+                        expanded.clear();
+                    }
+                    toggle(entry.id);
+                }
+
+                @Override
+                public void onQuickFolder(Entry entry) {
+                    quickMoveEntryFolder(entry);
+                }
+
+                @Override
+                public void onQuickTag(Entry entry) {
+                    quickEditEntryTags(entry);
                 }
             };
 
@@ -1793,7 +2297,7 @@ public class MainActivity extends AppActivity {
                     expanded.contains(e.id),
                     selecting,
                     selected.contains(e.id),
-                    tab == 1 ? category : null,
+                    tab == 1 ? category : homeFolderId,
                     entryActionsListener);
             return view;
         }

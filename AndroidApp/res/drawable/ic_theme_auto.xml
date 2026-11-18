@@ -4,45 +4,31 @@
     android:height="42dp"
     android:viewportWidth="56"
     android:viewportHeight="42">
-    <!-- Left light half -->
+    <!-- Left half: Frost Titanium -->
     <path
-        android:fillColor="#F5F7F7"
+        android:fillColor="#EEF2F7"
         android:pathData="M8,2 H28 V40 H8 Q2,40 2,34 V8 Q2,2 8,2 Z" />
-    <!-- Right dark half -->
+    <!-- Right half: Abyssal Obsidian -->
     <path
-        android:fillColor="#101B1A"
-        android:pathData="M28,2 H48 Q54,2 54,8 V34 Q54,40 48,40 H28 V2 Z" />
-    <!-- Top card light half -->
+        android:fillColor="#090D15"
+        android:pathData="M28,2 H48 Q54,2 54,8 V34 Q54,40 48,40 H28 Z" />
+    <!-- Split Cat Head silhouette in center -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M9,8 H28 V21 H7 V10 Q7,8 9,8 Z" />
-    <!-- Top card dark half -->
+        android:fillColor="#0C121E"
+        android:pathData="M15,23 L15,10 L22,14 H28 V33 C20,33 15,29 15,23 Z" />
     <path
-        android:fillColor="#1B2A28"
-        android:pathData="M28,8 H47 Q49,8 49,10 V21 H28 V8 Z" />
-    <!-- Accent pill across center -->
+        android:fillColor="#182234"
+        android:pathData="M41,23 L41,10 L34,14 H28 V33 C36,33 41,29 41,23 Z" />
+    <!-- Left Ice-Cyan Eye & Right Amber Eye -->
     <path
-        android:fillColor="@color/c_accent"
-        android:pathData="M11,12 H28 V15 H11 Z" />
+        android:fillColor="#2CE5D8"
+        android:pathData="M18.5,21 L25,22.8 L23.5,25.4 L19.2,23.6 Z" />
     <path
-        android:fillColor="#85DAB6"
-        android:pathData="M28,12 H37 V15 H28 Z" />
-    <!-- Bottom mini card halves -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M9,25 H28 V34 H7 V27 Q7,25 9,25 Z" />
-    <path
-        android:fillColor="#1B2A28"
-        android:pathData="M28,25 H47 Q49,25 49,27 V34 H28 V25 Z" />
-    <path
-        android:fillColor="#C8D6D1"
-        android:pathData="M11,29 H28 V31 H11 Z" />
-    <path
-        android:fillColor="#4D685D"
-        android:pathData="M28,29 H41 V31 H28 Z" />
-    <!-- Outer subtle border -->
+        android:fillColor="#F5B841"
+        android:pathData="M37.5,21 L31,22.8 L32.5,25.4 L36.8,23.6 Z" />
+    <!-- Frame border -->
     <path
         android:pathData="M8,2 H48 Q54,2 54,8 V34 Q54,40 48,40 H8 Q2,40 2,34 V8 Q2,2 8,2 Z"
-        android:strokeColor="@color/c_divider"
-        android:strokeWidth="1.4" />
+        android:strokeColor="@color/c_line"
+        android:strokeWidth="1.5" />
 </vector>
